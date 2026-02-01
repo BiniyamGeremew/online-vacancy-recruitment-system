@@ -1,0 +1,14 @@
+# Ignore auto-generated or vendor files
+**/migrations/** linguist-vendored
+**/static/** linguist-vendored
+**/node_modules/** linguist-vendored
+**/venv/** linguist-vendored
+**/__pycache__/** linguist-vendored
+
+# Recognize file types correctly
+*.py linguist-language=Python
+*.html linguist-language=HTML
+*.css linguist-language=CSS
+*.js linguist-language=JavaScript
+*.scss linguist-language=SCSS
+*.less linguist-language=Less
