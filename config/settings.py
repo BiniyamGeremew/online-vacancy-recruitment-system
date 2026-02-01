@@ -17,6 +17,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
+     'accounts',
+     'applicant',
+     'hr_officer',
+
 ]
 
 # Middleware
@@ -36,7 +41,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -61,6 +66,9 @@ DATABASES = {
         "PORT": config("DB_PORT", default="5432"),
     }
 }
+
+LOGIN_URL = '/accounts/login/'
+LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

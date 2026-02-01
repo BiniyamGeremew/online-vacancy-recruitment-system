@@ -1,0 +1,17 @@
+/* Darken only the main content area */
+.content-wrapper {
+  background-color: #1e1e2f !important;
+  color: #f0f0f0 !important;
+}
+
+.content-header,
+.content {
+  background-color: transparent !important;
+}
+
+/* Optional: dark cards inside content */
+.card {
+  background-color: #2a2a3d;
+  color: #f0f0f0;
+  border: none;
+}
