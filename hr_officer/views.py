@@ -3,4 +3,4 @@ from django.shortcuts import render
 
 @login_required
 def dashboard(request):
-    return render(request, 'applicant/dashboard.html')
+    return render(request, 'hr_officer/dashboard.html')

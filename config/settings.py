@@ -20,6 +20,8 @@ INSTALLED_APPS = [
 
      'accounts',
      'applicant',
+     'hr_officer',
+
 ]
 
 # Middleware
@@ -64,6 +66,9 @@ DATABASES = {
         "PORT": config("DB_PORT", default="5432"),
     }
 }
+
+LOGIN_URL = '/accounts/login/'
+LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
