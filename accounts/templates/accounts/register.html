@@ -1,57 +1,253 @@
+{% load static %}
+{% load form_tags %}
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>User Registration</title>
+    <meta charset="UTF-8">
+    <title>Register | HU-HRMD-OVRS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="{% static 'adminlte/plugins/fontawesome-free/css/all.min.css' %}">
+    <link rel="stylesheet" href="{% static 'adminlte/dist/css/adminlte.min.css' %}">
+
+    <style>
+        body {
+            background: #f4f6f9;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+        }
+
+        /* Header */
+        .hu-header {
+            background: #28a745;
+            color: #fff;
+            padding: 16px 24px;
+            font-weight: bold;
+            text-align: left;
+            width: 100%;
+        }
+        .hu-header small {
+            display: block;
+            font-weight: normal;
+            font-size: 0.85rem;
+        }
+
+        /* Register wrapper */
+        .register-wrapper {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            width: 100%;
+        }
+
+        .register-container {
+            background: #fff;
+            width: 100%;
+            max-width: 500px;
+            padding: 30px 24px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .register-logo {
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 16px;
+            display: block;
+        }
+
+        .register-info {
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #555;
+        }
+
+        .register-info a {
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-label {
+            display: flex;
+            align-items: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .form-label i {
+            margin-right: 8px;
+            color: #28a745;
+        }
+        .form-control {
+            font-size: 0.9rem;
+            padding: 10px;
+        }
+
+        .btn-register {
+            width: 100%;
+            padding: 10px;
+            font-size: 1rem;
+            background: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* CAPTCHA refresh */
+        .captcha-refresh {
+            font-size: 0.85rem;
+            color: #28a745;
+            cursor: pointer;
+            margin-left: 10px;
+            text-decoration: underline;
+        }
+
+        .main-footer {
+            background: #343a40;
+            color: #fff;
+            border-top: none;
+            width: 100%;
+            margin-left: 0 !important;  
+            text-align: center;
+            font-size: 0.85rem;
+            padding: 12px 0;
+        }
+        .main-footer a {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        @media (max-width: 576px) {
+            .register-container {
+                padding: 20px;
+            }
+            .register-info {
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+
+    <script>
+        function refreshCaptcha() {
+            const img = document.querySelector('#id_captcha_image');
+            if (img) {
+                img.src = img.src.split('?')[0] + '?' + new Date().getTime();
+            }
+        }
+    </script>
 </head>
 <body>
-    <h2>Register</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.non_field_errors }}
 
-        <p>
-            {{ form.first_name.label_tag }}<br>
-            {{ form.first_name }}
-            {{ form.first_name.errors }}
-        </p>
+<!-- Header -->
+<div class="hu-header">
+    Haramaya University
+    <small>Human Resource Management and Development Directorate</small>
+</div>
 
-        <p>
-            {{ form.father_name.label_tag }}<br>
-            {{ form.father_name }}
-            {{ form.father_name.errors }}
-        </p>
+<!-- Register Section -->
+<div class="register-wrapper">
+    <div class="register-container">
 
-        <p>
-            {{ form.grand_father_name.label_tag }}<br>
-            {{ form.grand_father_name }}
-            {{ form.grand_father_name.errors }}
-        </p>
+        <img src="{% static 'img/HU.png' %}" alt="HU Logo" class="register-logo rounded-circle">
 
-        <p>
-            {{ form.email.label_tag }}<br>
-            {{ form.email }}
-            {{ form.email.errors }}
-        </p>
+        <div class="register-info">
+            Since your identity is verified by Email, you are required to use a valid and available email address.
+        </div>
 
-        <p>
-            {{ form.username.label_tag }}<br>
-            {{ form.username }}
-            {{ form.username.errors }}
-        </p>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
 
-        <p>
-            {{ form.password1.label_tag }}<br>
-            {{ form.password1 }}
-            {{ form.password1.errors }}
-        </p>
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-user"></i> {{ form.first_name.label }}</label>
+                {{ form.first_name|add_class:"form-control" }}
+                {{ form.first_name.errors }}
+            </div>
 
-        <p>
-            {{ form.password2.label_tag }}<br>
-            {{ form.password2 }}
-            {{ form.password2.errors }}
-        </p>
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-user"></i> {{ form.father_name.label }}</label>
+                {{ form.father_name|add_class:"form-control" }}
+                {{ form.father_name.errors }}
+            </div>
 
-        <button type="submit">Register</button>
-    </form>
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-user"></i> {{ form.grand_father_name.label }}</label>
+                {{ form.grand_father_name|add_class:"form-control" }}
+                {{ form.grand_father_name.errors }}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-envelope"></i> {{ form.email.label }}</label>
+                {{ form.email|add_class:"form-control" }}
+                {{ form.email.errors }}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-phone"></i> {{ form.phone_number.label }}</label>
+                {{ form.phone_number|add_class:"form-control" }}
+                {{ form.phone_number.errors }}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-lock"></i> {{ form.password1.label }}</label>
+                {{ form.password1|add_class:"form-control" }}
+                {{ form.password1.errors }}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-lock"></i> {{ form.password2.label }}</label>
+                {{ form.password2|add_class:"form-control" }}
+                {{ form.password2.errors }}
+            </div>
+            
+<div class="form-group">
+    <label class="form-label">
+        <i class="fas fa-shield-alt"></i> {{ form.captcha.label }}
+    </label>
+
+    <div style="display:flex; align-items:center; gap:10px;">
+        {{ form.captcha }}
+        <span class="captcha-refresh" onclick="refreshCaptcha()">Refresh</span>
+    </div>
+
+    {{ form.captcha.errors }}
+</div>
+
+
+            <button type="submit" class="btn-register">Register</button>
+        </form>
+
+        <div class="register-info" style="margin-top:12px; font-size:0.85rem; text-align:center;">
+            Already have an account? <a href="{% url 'accounts:login' %}">Login here</a>
+        </div>
+
+    </div>
+</div>
+
+<!-- Footer -->
+<footer class="main-footer">
+    <strong>
+        &copy; 2026
+        <a href="https://www.haramaya.edu.et" target="_blank">
+            Haramaya University
+        </a>.
+    </strong>
+    All rights reserved.
+</footer>
+
+
+
 </body>
 </html>
