@@ -23,29 +23,35 @@ class RegisterForm(UserCreationForm):
         label="Grand Father Name",
         widget=forms.TextInput(attrs={'placeholder': 'Your Grand Father Name'})
     )
-    email = forms.EmailField(
-        required=True,
-        label="Email",
-        widget=forms.EmailInput(attrs={'placeholder': 'Your Email Address'})
-    )
     phone_number = forms.CharField(
         max_length=15,
         required=False,
         label="Phone Number",
         widget=forms.TextInput(attrs={'placeholder': 'Your Phone Number'})
     )
-    captcha = CaptchaField(label="CAPTCHA") 
+    email = forms.EmailField(
+        required=True,
+        label="Email",
+        widget=forms.EmailInput(attrs={'placeholder': 'Your Email Address'})
+    )
+    captcha = CaptchaField(label="CAPTCHA")
 
     class Meta:
         model = User
         fields = [
+            'username',
             'first_name',
             'father_name',
             'grand_father_name',
             'email',
             'phone_number',
-            'username',
             'password1',
             'password2',
             'captcha',
-        ]
+]
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError("Email already in use.")
+        return email

@@ -1,0 +1,10 @@
+Hello {{ user.first_name }},
+
+Please click the link below to activate your account:
+
+http://{{ domain }}{% url 'accounts:activate' uid=uid token=token %}
+
+If you didn’t register, you can ignore this email.
+
+Thanks,
+HU-HRMD Team
