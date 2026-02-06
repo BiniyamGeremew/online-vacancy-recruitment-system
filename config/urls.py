@@ -8,4 +8,6 @@ urlpatterns = [
     path('applicant/', include('applicant.urls', namespace='applicant')),
     path('hr_officer/', include('hr_officer.urls', namespace='hr_officer')),
     path('', RedirectView.as_view(url='/accounts/login/')),  
+
+    path('captcha/', include('captcha.urls')), 
 ]
