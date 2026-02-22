@@ -1,14 +1,21 @@
 {% extends "base.html" %}
-{% block title %}Applicant Dashboard{% endblock %}
+
+{% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <h1>Welcome, {{ user.username }}!</h1>
-    <h2>Your dashboard is coming soon.</h2>
+<h1>
+    Welcome, 
+    {% if user.groups.all %}
+        {{ user.groups.all.0.name }}
+    {% else %}
+        {{ user.username }}
+    {% endif %}
+!</h1>
 
-    <form method="post" action="{% url 'accounts:logout' %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-danger mt-2">Logout</button>
-    </form>
-</div>
+<h2>Your dashboard is coming soon.</h2>
+
+<form method="post" action="{% url 'accounts:logout' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger mt-2">Logout</button>
+</form>
 {% endblock %}
