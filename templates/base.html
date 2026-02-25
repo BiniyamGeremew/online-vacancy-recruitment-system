@@ -1,5 +1,5 @@
 {% load static %}
-#{% load custom_filters %}
+{% load custom_filters %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -91,6 +91,9 @@
 
       {% elif user|has_group:'hr_officer' %}
         {% include 'hr_officer/hr_officer_sidebar.html' %}
+
+      {% elif user|has_group:'department_head' %}
+        {% include 'department_head/department_head_sidebar.html' %}
   
       {% endif %}
 
