@@ -18,11 +18,12 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 
-     'accounts',
-     'applicant',
-     'hr_officer',
+    'accounts',
+    'applicant',
+    'hr_officer',
+    'department_head',
 
-     'captcha',
+    'captcha',
 
 ]
 

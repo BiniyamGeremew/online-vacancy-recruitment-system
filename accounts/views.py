@@ -26,6 +26,8 @@ class CustomLoginView(LoginView):
             return reverse_lazy('applicant:dashboard')
         if user.groups.filter(name='hr_officer').exists():
             return reverse_lazy('hr_officer:dashboard')
+        if user.groups.filter(name='department_head').exists():
+            return reverse_lazy('department_head:dashboard')
         return reverse_lazy('accounts:login')
 
 
