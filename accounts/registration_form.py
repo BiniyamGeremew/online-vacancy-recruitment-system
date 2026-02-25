@@ -39,7 +39,7 @@ class RegisterForm(UserCreationForm):
     class Meta:
         model = User
         fields = [
-            'username',
+            # use email as username; do not show separate username field
             'first_name',
             'father_name',
             'grand_father_name',
@@ -55,3 +55,14 @@ class RegisterForm(UserCreationForm):
         if User.objects.filter(email=email).exists():
             raise forms.ValidationError("Email already in use.")
         return email
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        email = self.cleaned_data.get('email')
+        if email:
+            # use email as the username 
+            user.email = email.lower()
+            user.username = email.lower()
+        if commit:
+            user.save()
+        return user

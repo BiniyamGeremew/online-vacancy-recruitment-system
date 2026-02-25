@@ -14,11 +14,13 @@ from django.conf import settings
 from django.contrib.auth.models import Group
 
 from .registration_form import RegisterForm
+from .forms import EmailAuthenticationForm
 from .models import UserProfile
 
 
 class CustomLoginView(LoginView):
     template_name = 'accounts/login.html'
+    authentication_form = EmailAuthenticationForm
 
     def get_success_url(self):
         user = self.request.user
@@ -57,10 +59,12 @@ def register_view(request):
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         if form.is_valid():
-            # Create user
+            # Create user (use email as username)
             user = form.save(commit=False)
+            email = form.cleaned_data['email'].lower()
+            user.email = email
+            user.username = email
             user.is_active = False
-            user.email = form.cleaned_data['email']
             user.save()
 
             # Create profile
