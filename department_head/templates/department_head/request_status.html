@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Request Status{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Request Status</h3>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        {% for r in requests %}
+        <div class="col-md-6 mb-3">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">{{ r.subject }}</h5>
+              <p class="card-text">Submitted: {{ r.date_submitted|date:"Y-m-d" }}</p>
+              <p>
+                {% if r.status == 'Draft' %}<span class="badge bg-secondary">Draft</span>{% elif r.status == 'Submitted' %}<span class="badge bg-info">Submitted</span>{% elif r.status == 'Approved' %}<span class="badge bg-success">Approved</span>{% elif r.status == 'Rejected' %}<span class="badge bg-danger">Rejected</span>{% endif %}
+              </p>
+              <a href="{% url 'department_head:request_detail' r.pk %}" class="btn btn-sm btn-outline-primary">View</a>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="col-12">No requests found.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

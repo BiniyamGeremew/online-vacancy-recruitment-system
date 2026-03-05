@@ -4,28 +4,28 @@
       role="menu">
 
     <li class="nav-item">
-      <a href="#" class="nav-link">
+      <a href="{% url 'department_head:dashboard' %}" class="nav-link">
         <i class="nav-icon fas fa-tachometer-alt text-primary"></i>
         <p>Dashboard</p>
       </a>
     </li>
 
     <li class="nav-item">
-      <a href="#" class="nav-link">
+      <a href="{% url 'department_head:submit_request' %}" class="nav-link">
         <i class="nav-icon fas fa-file-signature text-info"></i>
         <p>Submit Employer Request</p>
       </a>
     </li>
 
     <li class="nav-item">
-      <a href="#" class="nav-link">
+      <a href="{% url 'department_head:my_requests' %}" class="nav-link">
         <i class="nav-icon fas fa-folder-open text-success"></i>
         <p>My Employer Requests</p>
       </a>
     </li>
 
     <li class="nav-item">
-      <a href="#" class="nav-link">
+      <a href="{% url 'department_head:my_requests' %}" class="nav-link">
         <i class="nav-icon fas fa-tasks text-warning"></i>
         <p>Request Status</p>
       </a>
@@ -46,7 +46,7 @@
     </li>
 
     <li class="nav-item">
-      <a href="#" class="nav-link">
+      <a href="{% url 'accounts:logout' %}" class="nav-link">
         <i class="nav-icon fas fa-sign-out-alt text-secondary"></i>
         <p>Logout</p>
       </a>
