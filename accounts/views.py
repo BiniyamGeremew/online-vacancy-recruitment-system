@@ -30,6 +30,10 @@ class CustomLoginView(LoginView):
             return reverse_lazy('hr_officer:dashboard')
         if user.groups.filter(name='department_head').exists():
             return reverse_lazy('department_head:dashboard')
+        if user.groups.filter(name='college_dean').exists():
+            return reverse_lazy('college_dean:dashboard')
+        if user.groups.filter(name='academic_vp').exists():
+            return reverse_lazy('academic_vp:dashboard')
         return reverse_lazy('accounts:login')
 
 

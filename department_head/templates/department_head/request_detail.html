@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Request Detail{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+  <h3>{{ request_obj.department.name }} - {{ request_obj.subject }}</h3>
+  <p><strong>Status:</strong> {{ request_obj.status }}</p>
+  <p>{{ request_obj.description }}</p>
+
+  <h4>Positions</h4>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>No</th>
+        <th>Qualification</th>
+        <th>Rank</th>
+        <th>Specialization</th>
+        <th>Sex</th>
+        <th>Experience</th>
+        <th>CGPA</th>
+        <th>Count</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for it in request_obj.items.all %}
+      <tr>
+        <td>{{ it.no }}</td>
+        <td>{{ it.academic_qualification }}</td>
+        <td>{{ it.academic_rank }}</td>
+        <td>{{ it.area_of_specialization }}</td>
+        <td>{{ it.get_sex_display }}</td>
+        <td>{{ it.experience_years }}</td>
+        <td>{{ it.cgpa_requirement }}</td>
+        <td>{{ it.number_of_employees }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8">No positions listed.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+
+{% endblock %}

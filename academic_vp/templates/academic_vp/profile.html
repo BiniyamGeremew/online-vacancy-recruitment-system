@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}VP Profile{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    {% if profile %}
+      <h3>{{ profile.user.get_full_name }}</h3>
+      <p><strong>Office:</strong> {{ profile.office_location }}</p>
+      <p><strong>Phone:</strong> {{ profile.phone_number }}</p>
+      <p>{{ profile.bio }}</p>
+    {% else %}
+      <p>No profile found.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

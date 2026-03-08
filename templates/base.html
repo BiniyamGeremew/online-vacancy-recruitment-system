@@ -94,6 +94,10 @@
 
       {% elif user|has_group:'department_head' %}
         {% include 'department_head/department_head_sidebar.html' %}
+      {% elif user|has_group:'college_dean' %}
+        {% include 'college_dean/college_dean_sidebar.html' %}
+      {% elif user|has_group:'academic_vp' %}
+        {% include 'academic_vp/sidebar.html' %}
   
       {% endif %}
 

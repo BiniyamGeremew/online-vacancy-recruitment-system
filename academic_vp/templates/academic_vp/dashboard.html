@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Academic VP Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="row mt-3">
+  <div class="col-md-3">
+    <div class="small-box bg-info"><div class="inner"><h3>{{ pending }}</h3><p>Pending (to review)</p></div></div>
+  </div>
+  <div class="col-md-3">
+    <div class="small-box bg-success"><div class="inner"><h3>{{ approved }}</h3><p>Approved</p></div></div>
+  </div>
+  <div class="col-md-3">
+    <div class="small-box bg-danger"><div class="inner"><h3>{{ rejected }}</h3><p>Rejected</p></div></div>
+  </div>
+  <div class="col-md-3">
+    <div class="small-box bg-warning"><div class="inner"><h3>{{ forwarded }}</h3><p>Forwarded to HR</p></div></div>
+  </div>
+</div>
+{% endblock %}
