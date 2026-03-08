@@ -31,9 +31,23 @@
               </td>
               <td>
                 <a href="{% url 'department_head:request_detail' r.pk %}" class="btn btn-sm btn-outline-primary">View</a>
-                {% if r.status == 'Draft' %}
+
+                {# Edit button: active only when status is Submitted #}
+                {% if r.status == STATUS_SUBMITTED %}
                   <a href="{% url 'department_head:request_update' r.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                {% else %}
+                  <button class="btn btn-sm btn-outline-secondary" disabled>Edit</button>
                 {% endif %}
+
+                {# Delete button: POST form, active only when status is Submitted #}
+                <form method="post" action="{% url 'department_head:request_delete' r.pk %}" style="display:inline-block">
+                  {% csrf_token %}
+                  {% if r.status == STATUS_SUBMITTED %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                  {% else %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger" disabled>Delete</button>
+                  {% endif %}
+                </form>
               </td>
             </tr>
             {% empty %}
