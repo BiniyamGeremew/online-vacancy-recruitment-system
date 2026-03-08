@@ -23,6 +23,8 @@ INSTALLED_APPS = [
     'hr_officer',
     'department_head',
     'organization',
+    'college_dean',
+    'academic_vp',
 
     'captcha',
 

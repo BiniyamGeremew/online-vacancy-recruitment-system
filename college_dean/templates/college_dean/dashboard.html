@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}College Dean Dashboard{% endblock %}
+
+{% block content %}
+<h1>
+  Welcome,
+  {% if user.groups.all %}
+    {{ user.groups.all.0.name }}
+  {% else %}
+    {{ user.username }}
+  {% endif %}
+!</h1>
+
+<div class="row">
+  <div class="col-md-3">
+    <div class="small-box bg-info">
+      <div class="inner">
+        <h3>{{ pending }}</h3>
+        <p>Pending Requests</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="small-box bg-success">
+      <div class="inner">
+        <h3>{{ approved }}</h3>
+        <p>Approved</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="small-box bg-danger">
+      <div class="inner">
+        <h3>{{ rejected }}</h3>
+        <p>Rejected</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="small-box bg-warning">
+      <div class="inner">
+        <h3>{{ forwarded }}</h3>
+        <p>Forwarded to VP</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

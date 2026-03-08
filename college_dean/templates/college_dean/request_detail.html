@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Request Review{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="card">
+    <div class="card-body">
+      <h3>{{ request_obj.subject }}</h3>
+      <p><strong>Department:</strong> {{ request_obj.department.name }}</p>
+      <p>{{ request_obj.description }}</p>
+
+      <h5 class="mt-3">Positions</h5>
+      <ul>
+        {% for item in request_obj.items.all %}
+        <li>{{ item.academic_qualification }} / {{ item.academic_rank }} — {{ item.number_of_employees }} ({{ item.get_sex_display }})</li>
+        {% endfor %}
+      </ul>
+
+      <h5 class="mt-4">Actions</h5>
+      <form method="post" action="{% url 'college_dean:approve_request' request_obj.pk %}" style="display:inline-block">
+        {% csrf_token %}
+        {{ approve_form.confirm }}
+        <button class="btn btn-success btn-sm" type="submit">Approve</button>
+      </form>
+
+      <button class="btn btn-danger btn-sm" data-bs-toggle="collapse" data-bs-target="#rejectForm">Reject</button>
+      <div class="collapse mt-2" id="rejectForm">
+        <form method="post" action="{% url 'college_dean:reject_request' request_obj.pk %}">
+          {% csrf_token %}
+          {{ reject_form.reason }}
+          <div class="mt-2"><button class="btn btn-danger btn-sm" type="submit">Submit Rejection</button></div>
+        </form>
+      </div>
+
+      <button class="btn btn-warning btn-sm" data-bs-toggle="collapse" data-bs-target="#forwardForm">Forward to VP</button>
+      <div class="collapse mt-2" id="forwardForm">
+        <form method="post" action="{% url 'college_dean:forward_request' request_obj.pk %}">
+          {% csrf_token %}
+          {{ forward_form.reason }}
+          <div class="mt-2"><button class="btn btn-warning btn-sm" type="submit">Forward</button></div>
+        </form>
+      </div>
+
+      <h5 class="mt-4">Past Actions</h5>
+      <ul>
+        {% for act in actions %}
+        <li>{{ act.performed_at|date:"Y-m-d H:i" }} — {{ act.get_action_display }} by {{ act.performed_by }}{% if act.reason %}: {{ act.reason }}{% endif %}</li>
+        {% empty %}
+        <li>No actions yet.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

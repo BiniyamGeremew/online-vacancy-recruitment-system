@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}VP Notifications{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <ul>
+      {% for it in items %}
+        <li>{{ it.performed_at|date:"Y-m-d H:i" }} — {{ it.get_action_display }}: {{ it.request.subject }}</li>
+      {% empty %}
+        <li>No notifications.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}

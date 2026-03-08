@@ -102,8 +102,8 @@ class UpdateEmployeeRequestView(DepartmentHeadRequiredMixin, UpdateView):
 
     def dispatch(self, request, *args, **kwargs):
         obj = self.get_object()
-        if obj.status != EmployeeRequest.STATUS_DRAFT:
-            messages.error(request, 'Only draft requests can be edited.')
+        if obj.status != EmployeeRequest.STATUS_SUBMITTED:
+            messages.error(request, 'Only submitted requests can be edited.')
             return redirect('department_head:request_detail', pk=obj.pk)
         return super().dispatch(request, *args, **kwargs)
 

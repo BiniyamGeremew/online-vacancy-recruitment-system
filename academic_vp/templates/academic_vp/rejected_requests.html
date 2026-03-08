@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Rejected Requests{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header"><h3 class="card-title">Rejected Requests</h3></div>
+  <div class="card-body">
+    <ul>
+      {% for r in requests %}
+      <li>{{ r.date_submitted|date:"Y-m-d H:i" }} — {{ r.subject }} ({{ r.department.name }})</li>
+      {% empty %}
+      <li>No rejected requests.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}

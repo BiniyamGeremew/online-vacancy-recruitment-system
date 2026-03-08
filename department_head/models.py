@@ -5,16 +5,16 @@ from organization.models import TimeStampedModel
 
 
 class EmployeeRequest(TimeStampedModel):
-    STATUS_DRAFT = 'Draft'
     STATUS_SUBMITTED = 'Submitted'
     STATUS_APPROVED = 'Approved'
     STATUS_REJECTED = 'Rejected'
+    STATUS_FORWARDED_TO_VP = 'Forwarded to VP'
 
     STATUS_CHOICES = [
-        (STATUS_DRAFT, 'Draft'),
         (STATUS_SUBMITTED, 'Submitted'),
         (STATUS_APPROVED, 'Approved'),
         (STATUS_REJECTED, 'Rejected'),
+        (STATUS_FORWARDED_TO_VP, 'Forwarded to VP'),
     ]
 
     department = models.ForeignKey(
@@ -31,7 +31,7 @@ class EmployeeRequest(TimeStampedModel):
     subject = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     closing_note = models.TextField(blank=True)
-    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default=STATUS_DRAFT)
+    status = models.CharField(max_length=32, choices=STATUS_CHOICES, default=STATUS_SUBMITTED)
 
     class Meta:
         ordering = ['-date_submitted']
