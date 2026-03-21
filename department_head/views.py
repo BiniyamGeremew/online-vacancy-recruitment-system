@@ -11,6 +11,8 @@ from .forms import (
     EmployeeRequestItemFormsetCreate,
 )
 from .models import EmployeeRequest
+from django.views import View
+from django.http import HttpResponseForbidden
 
 
 @login_required
@@ -79,6 +81,11 @@ class MyEmployeeRequestsView(LoginRequiredMixin, ListView):
             return EmployeeRequest.objects.none()
         return EmployeeRequest.objects.filter(department=profile.department).order_by('-date_submitted')
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['STATUS_SUBMITTED'] = EmployeeRequest.STATUS_SUBMITTED
+        return ctx
+
 
 class EmployeeRequestDetailView(LoginRequiredMixin, DetailView):
     model = EmployeeRequest
@@ -123,4 +130,21 @@ class UpdateEmployeeRequestView(DepartmentHeadRequiredMixin, UpdateView):
             messages.success(self.request, 'Employee request updated.')
             return redirect(self.success_url)
         return self.form_invalid(form)
+
+
+class DeleteEmployeeRequestView(DepartmentHeadRequiredMixin, View):
+    def post(self, request, pk):
+        obj = get_object_or_404(EmployeeRequest, pk=pk)
+        # ensure this request belongs to the department of the user
+        profile = getattr(request.user, 'userprofile', None)
+        if not profile or not profile.department or obj.department != profile.department:
+            return HttpResponseForbidden()
+
+        if obj.status != EmployeeRequest.STATUS_SUBMITTED:
+            messages.error(request, 'Only submitted requests can be deleted.')
+            return redirect('department_head:request_detail', pk=obj.pk)
+
+        obj.delete()
+        messages.success(request, 'Employee request deleted.')
+        return redirect('department_head:my_requests')
 

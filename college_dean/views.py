@@ -7,7 +7,7 @@ from django.views.generic import ListView, DetailView
 
 from .models import DeanProfile, DeanAction
 from department_head.models import EmployeeRequest
-from .forms import ApproveForm, RejectForm, ForwardForm
+from .forms import RejectForm, ForwardForm
 
 
 class CollegeDeanRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -40,17 +40,15 @@ def dashboard(request):
 
     college = profile.college
     if not college:
-            pending = approved = rejected = forwarded = 0
+        pending = rejected = forwarded = 0
     else:
-            qs = EmployeeRequest.objects.filter(department__college=college)
-            pending = qs.filter(status=EmployeeRequest.STATUS_SUBMITTED).count()
-            approved = qs.filter(status=EmployeeRequest.STATUS_APPROVED).count()
-            rejected = qs.filter(status=EmployeeRequest.STATUS_REJECTED).count()
-            forwarded = DeanAction.objects.filter(request__department__college=college, action=DeanAction.ACTION_FORWARDED).count()
+        qs = EmployeeRequest.objects.filter(department__college=college)
+        pending = qs.filter(status=EmployeeRequest.STATUS_SUBMITTED).count()
+        rejected = qs.filter(status=EmployeeRequest.STATUS_REJECTED).count()
+        forwarded = DeanAction.objects.filter(request__department__college=college, action=DeanAction.ACTION_FORWARDED).count()
 
     return render(request, 'college_dean/dashboard.html', {
         'pending': pending,
-        'approved': approved,
         'rejected': rejected,
         'forwarded': forwarded,
     })
@@ -81,7 +79,7 @@ class RequestDetailView(CollegeDeanRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['approve_form'] = ApproveForm()
+        ctx['approve_form'] = None
         ctx['reject_form'] = RejectForm()
         ctx['forward_form'] = ForwardForm()
         ctx['actions'] = self.object.dean_actions.all()
@@ -92,9 +90,7 @@ def _record_action_and_update(request_obj, user, action, reason=''):
     DeanAction.objects.create(request=request_obj, action=action, reason=reason, performed_by=user)
 
     # Update request status according to dean action
-    if action == DeanAction.ACTION_APPROVED:
-        request_obj.status = EmployeeRequest.STATUS_APPROVED
-    elif action == DeanAction.ACTION_REJECTED:
+    if action == DeanAction.ACTION_REJECTED:
         request_obj.status = EmployeeRequest.STATUS_REJECTED
     elif action == DeanAction.ACTION_FORWARDED:
         request_obj.status = EmployeeRequest.STATUS_FORWARDED_TO_VP
@@ -107,20 +103,7 @@ def _ensure_dean_of_request(user, request_obj):
     return profile and profile.college and request_obj.department.college_id == profile.college_id
 
 
-def approve_request(request, pk):
-    req = get_object_or_404(EmployeeRequest, pk=pk)
-    if not _ensure_dean_of_request(request.user, req):
-        messages.error(request, 'You do not have permission to approve this request.')
-        return redirect('college_dean:pending_requests')
-
-    if request.method == 'POST':
-        form = ApproveForm(request.POST)
-        if form.is_valid():
-            _record_action_and_update(req, request.user, DeanAction.ACTION_APPROVED)
-            messages.success(request, 'Request approved.')
-            return redirect('college_dean:pending_requests')
-    messages.error(request, 'Invalid approval submission.')
-    return redirect('college_dean:request_detail', pk=pk)
+# Approval by College Dean removed per workflow: only Reject and Forward remain.
 
 
 def reject_request(request, pk):
