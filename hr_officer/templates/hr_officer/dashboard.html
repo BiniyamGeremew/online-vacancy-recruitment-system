@@ -3,15 +3,5 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<h1>
-    Welcome, 
-    {% if user.groups.all %}
-        {{ user.groups.all.0.name }}
-    {% else %}
-        {{ user.username }}
-    {% endif %}
-!</h1>
-
-<h2>Your dashboard is coming soon.</h2>
 
 {% endblock %}

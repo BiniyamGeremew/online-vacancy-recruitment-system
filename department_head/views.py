@@ -148,3 +148,34 @@ class DeleteEmployeeRequestView(DepartmentHeadRequiredMixin, View):
         messages.success(request, 'Employee request deleted.')
         return redirect('department_head:my_requests')
 
+class ApprovedEmployeeRequestsView(LoginRequiredMixin, ListView):
+    model = EmployeeRequest
+    template_name = 'department_head/approved_requests.html'
+    context_object_name = 'requests'
+
+    def get_queryset(self):
+        user = self.request.user
+        profile = getattr(user, 'userprofile', None)
+        if not profile or not profile.department:
+            return EmployeeRequest.objects.none()
+
+        return EmployeeRequest.objects.filter(
+            department=profile.department,
+            status=EmployeeRequest.STATUS_APPROVED
+        ).order_by('-date_submitted')
+    
+class RejectedEmployeeRequestsView(LoginRequiredMixin, ListView):
+    model = EmployeeRequest
+    template_name = 'department_head/rejected_request.html'
+    context_object_name = 'requests'
+
+    def get_queryset(self): 
+        user = self.request.user
+        profile = getattr(user, 'userprofile', None)
+        if not profile or not profile.department:
+            return EmployeeRequest.objects.none()
+
+        return EmployeeRequest.objects.filter(
+            department=profile.department,
+            status=EmployeeRequest.STATUS_REJECTED
+        ).order_by('-date_submitted') 

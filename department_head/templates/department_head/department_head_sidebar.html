@@ -31,6 +31,20 @@
     </li>
 
     <li class="nav-item">
+  <a href="{% url 'department_head:approved_requests' %}" class="nav-link">
+    <i class="nav-icon fas fa-check-circle text-success"></i>
+    <p>Approved Requests</p>
+  </a>
+  </li>
+
+       <li class="nav-item">
+  <a href="{% url 'department_head:rejected_requests' %}" class="nav-link">
+    <i class="nav-icon fas fa-times-circle text-danger"></i>
+    <p>Rejected Requests</p>
+  </a>
+</li>
+
+    <li class="nav-item">
       <a href="#" class="nav-link">
         <i class="nav-icon fas fa-bell text-danger"></i>
         <p>Notifications</p>
