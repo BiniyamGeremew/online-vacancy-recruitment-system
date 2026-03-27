@@ -1,61 +1,80 @@
 {% extends "base.html" %}
 
-{% block title %}Pending Requests{% endblock %}
+{% block title %}Approved Requests{% endblock %}
 
 {% block content %}
 
 <div class="container-fluid">
 
+  <!-- Header -->
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="fw-bold">Pending Requests</h3>
+    <h3 class="fw-bold">Approved Department Requests</h3>
 
-    <input type="text" id="searchInput" class="form-control w-25" placeholder="Search...">
+    <a href="{% url 'department_head:submit_request' %}" class="btn btn-primary btn-sm">
+      + New Request
+    </a>
   </div>
 
-  <!-- Table Card -->
+  <!-- Table -->
   <div class="card shadow-sm border-0">
     <div class="card-body">
 
       <div class="table-responsive">
-        <table class="table table-hover align-middle" id="requestsTable">
+        <table class="table table-hover align-middle">
 
           <thead class="table-light">
             <tr>
               <th>Subject</th>
-              <th>Department</th>
               <th>Date Submitted</th>
               <th>Status</th>
-              <th class="text-end">Action</th>
+              <th class="text-end">Actions</th>
             </tr>
           </thead>
 
           <tbody>
+
             {% for r in requests %}
+
             <tr>
               <td class="fw-semibold">{{ r.subject }}</td>
-              <td>{{ r.department.name }}</td>
+
               <td>{{ r.date_submitted|date:"Y-m-d H:i" }}</td>
 
               <td>
-                <span class="badge bg-warning text-dark">
-                  Pending
+                <span class="badge bg-success">
+                  Approved by Dean
                 </span>
               </td>
 
               <td class="text-end">
-                <a href="{% url 'college_dean:request_detail' r.pk %}" 
+
+                <a href="{% url 'department_head:request_detail' r.pk %}"
                    class="btn btn-sm btn-outline-primary">
-                  Review
+                  View
                 </a>
+
+                <!-- Disabled actions -->
+                <button class="btn btn-sm btn-outline-secondary" disabled>
+                  Edit
+                </button>
+
+                <button class="btn btn-sm btn-outline-danger" disabled>
+                  Delete
+                </button>
+
               </td>
             </tr>
+
             {% empty %}
+
             <tr>
-              <td colspan="5" class="text-center text-muted">
-                No pending requests.
+              <td colspan="4" class="text-center text-muted">
+                No approved requests found.
               </td>
             </tr>
+
             {% endfor %}
+
           </tbody>
 
         </table>

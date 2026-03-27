@@ -1,14 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}Pending Requests{% endblock %}
+{% block title %}Rejected Requests{% endblock %}
 
 {% block content %}
 
 <div class="container-fluid">
 
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="fw-bold">Pending Requests</h3>
+    <h3 class="fw-bold text-danger">Rejected Requests</h3>
 
+    <!-- Search Box -->
     <input type="text" id="searchInput" class="form-control w-25" placeholder="Search...">
   </div>
 
@@ -24,6 +25,7 @@
               <th>Subject</th>
               <th>Department</th>
               <th>Date Submitted</th>
+              <th>Rejected At</th>
               <th>Status</th>
               <th class="text-end">Action</th>
             </tr>
@@ -35,24 +37,25 @@
               <td class="fw-semibold">{{ r.subject }}</td>
               <td>{{ r.department.name }}</td>
               <td>{{ r.date_submitted|date:"Y-m-d H:i" }}</td>
+              <td>{{ r.updated_at|date:"Y-m-d H:i" }}</td>
 
               <td>
-                <span class="badge bg-warning text-dark">
-                  Pending
+                <span class="badge bg-danger">
+                  Rejected
                 </span>
               </td>
 
               <td class="text-end">
                 <a href="{% url 'college_dean:request_detail' r.pk %}" 
-                   class="btn btn-sm btn-outline-primary">
-                  Review
+                   class="btn btn-sm btn-outline-secondary">
+                  View
                 </a>
               </td>
             </tr>
             {% empty %}
             <tr>
-              <td colspan="5" class="text-center text-muted">
-                No pending requests.
+              <td colspan="6" class="text-center text-muted">
+                No rejected requests.
               </td>
             </tr>
             {% endfor %}

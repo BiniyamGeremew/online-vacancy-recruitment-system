@@ -3,16 +3,56 @@
 {% block title %}Rejected Requests{% endblock %}
 
 {% block content %}
-<div class="card">
-  <div class="card-header"><h3 class="card-title">Rejected Requests</h3></div>
-  <div class="card-body">
-    <ul>
-      {% for r in requests %}
-      <li>{{ r.date_submitted|date:"Y-m-d H:i" }} — {{ r.subject }} ({{ r.department.name }})</li>
-      {% empty %}
-      <li>No rejected requests.</li>
-      {% endfor %}
-    </ul>
+
+<div class="container mt-3">
+
+  <div class="card">
+    <div class="card-header">
+      <h4 class="mb-0">Rejected Requests (by VP)</h4>
+    </div>
+
+    <div class="card-body">
+
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered align-middle">
+
+          <thead class="table-light">
+            <tr>
+              <th>Date</th>
+              <th>Subject</th>
+              <th>Department</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for r in requests %}
+            <tr>
+              <td>{{ r.date_submitted|date:"Y-m-d H:i" }}</td>
+              <td>{{ r.subject }}</td>
+              <td>{{ r.department.name }}</td>
+
+              <td>
+                <span class="badge bg-danger">
+                  {{ r.status }}
+                </span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="text-center text-muted">
+                No rejected requests.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+
+        </table>
+      </div>
+
+    </div>
   </div>
+
 </div>
+
 {% endblock %}

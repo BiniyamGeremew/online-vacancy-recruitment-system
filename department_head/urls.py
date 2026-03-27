@@ -10,4 +10,6 @@ urlpatterns = [
     path('requests/<int:pk>/', views.EmployeeRequestDetailView.as_view(), name='request_detail'),
     path('requests/<int:pk>/edit/', views.UpdateEmployeeRequestView.as_view(), name='request_update'),
     path('requests/<int:pk>/delete/', views.DeleteEmployeeRequestView.as_view(), name='request_delete'),
+    path('requests/approved/', views.ApprovedEmployeeRequestsView.as_view(), name='approved_requests'),
+    path('requests/rejected/', views.RejectedEmployeeRequestsView.as_view(), name='rejected_requests'),
 ]

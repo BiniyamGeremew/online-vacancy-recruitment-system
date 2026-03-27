@@ -3,22 +3,73 @@
 {% block title %}Sent Requests to VP{% endblock %}
 
 {% block content %}
+
 <div class="container-fluid">
-  <div class="card">
-    <div class="card-header">
-      <h3 class="card-title">My Sent Requests (to VP)</h3>
-    </div>
+
+  <!-- Header -->
+  <div class="mb-3">
+    <h3 class="fw-bold">My Sent Requests (to VP)</h3>
+    <p class="text-muted">History of requests forwarded by you</p>
+  </div>
+
+  <!-- Card -->
+  <div class="card shadow-sm border-0">
     <div class="card-body">
-      <ul>
-        {% for act in actions %}
-        {% if act.action == 'forwarded' %}
-        <li>{{ act.performed_at|date:"Y-m-d H:i" }} — {{ act.request.subject }} ({{ act.request.department.name }})</li>
-        {% endif %}
-        {% empty %}
-        <li>No forwarded requests.</li>
-        {% endfor %}
-      </ul>
+
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+
+          <thead class="table-light">
+            <tr>
+              <th>Date</th>
+              <th>Subject</th>
+              <th>Department</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+            {% for act in actions %}
+
+              {% if act.action == act.ACTION_FORWARDED %}
+
+              <tr>
+                <td>{{ act.performed_at|date:"Y-m-d H:i" }}</td>
+
+                <td class="fw-semibold">
+                  {{ act.request.subject }}
+                </td>
+
+                <td>
+                  {{ act.request.department.name }}
+                </td>
+
+                <td>
+                  <span class="badge bg-primary">
+                    Forwarded to VP
+                  </span>
+                </td>
+              </tr>
+
+              {% endif %}
+
+            {% empty %}
+              <tr>
+                <td colspan="4" class="text-center text-muted">
+                  No forwarded requests.
+                </td>
+              </tr>
+            {% endfor %}
+
+          </tbody>
+
+        </table>
+      </div>
+
     </div>
   </div>
+
 </div>
+
 {% endblock %}

@@ -1,23 +1,22 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required
-from django.urls import reverse_lazy
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import ListView, DetailView
 
 from .models import DeanProfile, DeanAction
 from department_head.models import EmployeeRequest
+from organization.constants import RequestStatus
+
 from .forms import RejectForm, ForwardForm
 
 
 class CollegeDeanRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
         user = self.request.user
-        # must have a deanprofile linked or be in 'college_dean' group
         profile = getattr(user, 'deanprofile', None)
         if profile and profile.college:
             return True
-        # fallback to group membership
         return user.groups.filter(name='college_dean').exists()
 
 
@@ -25,27 +24,24 @@ class CollegeDeanRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
 def dashboard(request):
     user = request.user
     profile = getattr(user, 'deanprofile', None)
-    # Auto-create a DeanProfile if missing and attempt to prefill college from user's profile
-    if not profile:
-        from accounts.models import UserProfile
-        prefilled_college = None
-        try:
-            up = UserProfile.objects.filter(user=user).first()
-            if up and getattr(up, 'department', None) and getattr(up.department, 'college', None):
-                prefilled_college = up.department.college
-        except Exception:
-            prefilled_college = None
 
-        profile = DeanProfile.objects.create(user=user, college=prefilled_college)
+    if not profile:
+        profile = DeanProfile.objects.create(user=user)
 
     college = profile.college
+
     if not college:
         pending = rejected = forwarded = 0
     else:
         qs = EmployeeRequest.objects.filter(department__college=college)
-        pending = qs.filter(status=EmployeeRequest.STATUS_SUBMITTED).count()
-        rejected = qs.filter(status=EmployeeRequest.STATUS_REJECTED).count()
-        forwarded = DeanAction.objects.filter(request__department__college=college, action=DeanAction.ACTION_FORWARDED).count()
+
+        pending = qs.filter(status=RequestStatus.SUBMITTED).count()
+        rejected = qs.filter(status=RequestStatus.REJECTED_BY_DEAN).count()
+
+        forwarded = DeanAction.objects.filter(
+            request__department__college=college,
+            action=DeanAction.ACTION_FORWARDED
+        ).count()
 
     return render(request, 'college_dean/dashboard.html', {
         'pending': pending,
@@ -63,7 +59,11 @@ class PendingRequestsView(CollegeDeanRequiredMixin, ListView):
         profile = getattr(self.request.user, 'deanprofile', None)
         if not profile or not profile.college:
             return EmployeeRequest.objects.none()
-        return EmployeeRequest.objects.filter(department__college=profile.college, status=EmployeeRequest.STATUS_SUBMITTED).order_by('-date_submitted')
+
+        return EmployeeRequest.objects.filter(
+            department__college=profile.college,
+            status=RequestStatus.SUBMITTED
+        ).order_by('-date_submitted')
 
 
 class RequestDetailView(CollegeDeanRequiredMixin, DetailView):
@@ -75,68 +75,87 @@ class RequestDetailView(CollegeDeanRequiredMixin, DetailView):
         profile = getattr(self.request.user, 'deanprofile', None)
         if not profile or not profile.college:
             return EmployeeRequest.objects.none()
-        return EmployeeRequest.objects.filter(department__college=profile.college)
+
+        return EmployeeRequest.objects.filter(
+            department__college=profile.college
+        )
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['approve_form'] = None
         ctx['reject_form'] = RejectForm()
         ctx['forward_form'] = ForwardForm()
         ctx['actions'] = self.object.dean_actions.all()
         return ctx
 
 
-def _record_action_and_update(request_obj, user, action, reason=''):
-    DeanAction.objects.create(request=request_obj, action=action, reason=reason, performed_by=user)
+def _ensure_dean_of_request(user, request_obj):
+    profile = getattr(user, 'deanprofile', None)
+    return (
+        profile
+        and profile.college
+        and request_obj.department.college_id == profile.college_id
+    )
 
-    # Update request status according to dean action
+
+def _record_action_and_update(request_obj, user, action, reason=''):
+    DeanAction.objects.create(
+        request=request_obj,
+        action=action,
+        reason=reason,
+        performed_by=user
+    )
+
     if action == DeanAction.ACTION_REJECTED:
-        request_obj.status = EmployeeRequest.STATUS_REJECTED
+        request_obj.status = RequestStatus.REJECTED_BY_DEAN
     elif action == DeanAction.ACTION_FORWARDED:
-        request_obj.status = EmployeeRequest.STATUS_FORWARDED_TO_VP
+        request_obj.status = RequestStatus.FORWARDED_TO_VP
 
     request_obj.save()
 
 
-def _ensure_dean_of_request(user, request_obj):
-    profile = getattr(user, 'deanprofile', None)
-    return profile and profile.college and request_obj.department.college_id == profile.college_id
-
-
-# Approval by College Dean removed per workflow: only Reject and Forward remain.
-
-
+@login_required
 def reject_request(request, pk):
     req = get_object_or_404(EmployeeRequest, pk=pk)
+
     if not _ensure_dean_of_request(request.user, req):
-        messages.error(request, 'You do not have permission to reject this request.')
+        messages.error(request, 'Permission denied.')
         return redirect('college_dean:pending_requests')
 
     if request.method == 'POST':
         form = RejectForm(request.POST)
         if form.is_valid():
-            reason = form.cleaned_data.get('reason')
-            _record_action_and_update(req, request.user, DeanAction.ACTION_REJECTED, reason=reason)
+            _record_action_and_update(
+                req,
+                request.user,
+                DeanAction.ACTION_REJECTED,
+                reason=form.cleaned_data.get('reason')
+            )
             messages.success(request, 'Request rejected.')
             return redirect('college_dean:pending_requests')
-    messages.error(request, 'Invalid rejection submission.')
+
     return redirect('college_dean:request_detail', pk=pk)
 
 
+@login_required
 def forward_request(request, pk):
     req = get_object_or_404(EmployeeRequest, pk=pk)
+
     if not _ensure_dean_of_request(request.user, req):
-        messages.error(request, 'You do not have permission to forward this request.')
+        messages.error(request, 'Permission denied.')
         return redirect('college_dean:pending_requests')
 
     if request.method == 'POST':
         form = ForwardForm(request.POST)
         if form.is_valid():
-            reason = form.cleaned_data.get('reason')
-            _record_action_and_update(req, request.user, DeanAction.ACTION_FORWARDED, reason=reason)
+            _record_action_and_update(
+                req,
+                request.user,
+                DeanAction.ACTION_FORWARDED,
+                reason=form.cleaned_data.get('reason')
+            )
             messages.success(request, 'Request forwarded to VP.')
             return redirect('college_dean:pending_requests')
-    messages.error(request, 'Invalid forward submission.')
+
     return redirect('college_dean:request_detail', pk=pk)
 
 
@@ -146,22 +165,44 @@ class SentRequestsView(CollegeDeanRequiredMixin, ListView):
     context_object_name = 'actions'
 
     def get_queryset(self):
+        return DeanAction.objects.filter(
+            performed_by=self.request.user
+        ).order_by('-performed_at')
+
+
+class RejectedRequestsView(CollegeDeanRequiredMixin, ListView):
+    model = EmployeeRequest
+    template_name = 'college_dean/rejected_requests.html'
+    context_object_name = 'requests'
+
+    def get_queryset(self):
         profile = getattr(self.request.user, 'deanprofile', None)
         if not profile or not profile.college:
-            return DeanAction.objects.none()
-        return DeanAction.objects.filter(performed_by=self.request.user).order_by('-performed_at')
+            return EmployeeRequest.objects.none()
 
+        return EmployeeRequest.objects.filter(
+            department__college=profile.college,
+            status=RequestStatus.REJECTED_BY_DEAN
+        ).order_by('-date_submitted')
 
 @login_required
 def notifications(request):
     profile = getattr(request.user, 'deanprofile', None)
+
     items = []
     if profile and profile.college:
-        items = DeanAction.objects.filter(request__department__college=profile.college).order_by('-performed_at')[:20]
-    return render(request, 'college_dean/notifications.html', {'items': items})
+        items = DeanAction.objects.filter(
+            request__department__college=profile.college
+        ).order_by('-performed_at')[:20]
+
+    return render(request, 'college_dean/notifications.html', {
+        'items': items
+    })
 
 
 @login_required
 def profile(request):
     profile = getattr(request.user, 'deanprofile', None)
-    return render(request, 'college_dean/profile.html', {'profile': profile})
+    return render(request, 'college_dean/profile.html', {
+        'profile': profile
+    })

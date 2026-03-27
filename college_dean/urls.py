@@ -12,4 +12,5 @@ urlpatterns = [
     path('sent/', views.SentRequestsView.as_view(), name='sent_requests'),
     path('notifications/', views.notifications, name='notifications'),
     path('profile/', views.profile, name='profile'),
+    path('rejected/', views.RejectedRequestsView.as_view(), name='rejected_requests'),
 ]

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}My Employee Requests{% endblock %}
+{% block title %}Rejected Requests{% endblock %}
 
 {% block content %}
 
@@ -9,7 +9,8 @@
   <div class="card shadow-sm border-0">
 
     <div class="card-header d-flex justify-content-between align-items-center">
-      <h3 class="card-title">My Department Requests</h3>
+      <h3 class="card-title">Rejected Department Requests</h3>
+
       <a href="{% url 'department_head:submit_request' %}" class="btn btn-sm btn-primary">
         + New Request
       </a>
@@ -41,17 +42,11 @@
 
               <td>
 
-                {% if r.status == STATUS_SUBMITTED %}
-                  <span class="badge bg-info">Submitted</span>
+                {% if r.status == STATUS_REJECTED_BY_DEAN %}
+                  <span class="badge bg-danger">Rejected by Dean</span>
 
-                {% elif r.status == STATUS_APPROVED_BY_DEAN %}
-                  <span class="badge bg-success">Approved</span>
-
-                {% elif r.status == STATUS_REJECTED_BY_DEAN %}
-                  <span class="badge bg-danger">Rejected</span>
-
-                {% elif r.status == STATUS_FORWARDED_TO_VP %}
-                  <span class="badge bg-primary">Forwarded to VP</span>
+                {% elif r.status == STATUS_REJECTED_BY_VP %}
+                  <span class="badge bg-dark">Rejected by VP</span>
 
                 {% else %}
                   <span class="badge bg-secondary">{{ r.status }}</span>
@@ -66,33 +61,14 @@
                   View
                 </a>
 
-                {% if r.status == STATUS_SUBMITTED %}
+                <!-- Disabled actions -->
+                <button class="btn btn-sm btn-outline-secondary" disabled>
+                  Edit
+                </button>
 
-                  <a href="{% url 'department_head:request_update' r.pk %}"
-                     class="btn btn-sm btn-outline-secondary">
-                    Edit
-                  </a>
-
-                  <form method="post"
-                        action="{% url 'department_head:request_delete' r.pk %}"
-                        style="display:inline-block">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                      Delete
-                    </button>
-                  </form>
-
-                {% else %}
-
-                  <button class="btn btn-sm btn-outline-secondary" disabled>
-                    Edit
-                  </button>
-
-                  <button class="btn btn-sm btn-outline-danger" disabled>
-                    Delete
-                  </button>
-
-                {% endif %}
+                <button class="btn btn-sm btn-outline-danger" disabled>
+                  Delete
+                </button>
 
               </td>
 
@@ -102,7 +78,7 @@
 
             <tr>
               <td colspan="4" class="text-center text-muted">
-                No requests found.
+                No rejected requests found.
               </td>
             </tr>
 

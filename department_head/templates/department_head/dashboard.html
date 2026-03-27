@@ -3,14 +3,49 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<h1>
-    Welcome, 
-    {% if user.groups.all %}
-        {{ user.groups.all.0.name }}
-    {% else %}
-        {{ user.username }}
-    {% endif %}
-!</h1>
 
-<h2>Your dashboard is coming soon.</h2>
+<div class="container">
+
+  <div class="mb-4">
+    <h2 class="fw-bold">
+      Welcome, {{ user.username }}
+    </h2>
+
+    <p class="text-muted">
+      {% if user.groups.all %}
+        {% for group in user.groups.all %}
+          <span class="badge bg-primary">{{ group.name }}</span>
+        {% endfor %}
+      {% else %}
+        <span class="badge bg-secondary">No role assigned</span>
+      {% endif %}
+    </p>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+
+      <h5 class="card-title">Quick Access</h5>
+
+      <div class="list-group">
+
+        <a href="/" class="list-group-item list-group-item-action">
+          Home
+        </a>
+
+        <a href="#" class="list-group-item list-group-item-action">
+          My Requests
+        </a>
+
+        <a href="#" class="list-group-item list-group-item-action">
+          Notifications
+        </a>
+
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
 {% endblock %}

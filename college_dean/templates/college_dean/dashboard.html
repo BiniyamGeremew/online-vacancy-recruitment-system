@@ -4,31 +4,86 @@
 
 {% block content %}
 
-<div class="row">
-  <div class="col-md-3">
-    <div class="small-box bg-info">
-      <div class="inner">
-        <h3>{{ pending }}</h3>
-        <p>Pending Requests</p>
+<div class="container-fluid">
+
+  <div class="mb-4">
+    <h2 class="fw-bold">Dean Dashboard</h2>
+    <p class="text-muted">Overview of request activities in your college</p>
+  </div>
+
+  <div class="row">
+
+    <div class="col-lg-4 col-md-6">
+      <div class="card shadow-sm border-0">
+        <div class="card-body text-center">
+          <h1 class="display-5 text-info">{{ pending }}</h1>
+          <p class="text-muted">Pending Requests</p>
+          <a href="{% url 'college_dean:pending_requests' %}" class="btn btn-sm btn-outline-info">
+            View Requests
+          </a>
+        </div>
       </div>
     </div>
-  </div>
-  
-  <div class="col-md-4">
-    <div class="small-box bg-danger">
-      <div class="inner">
-        <h3>{{ rejected }}</h3>
-        <p>Rejected</p>
+
+    <div class="col-lg-4 col-md-6">
+      <div class="card shadow-sm border-0">
+        <div class="card-body text-center">
+          <h1 class="display-5 text-danger">{{ rejected }}</h1>
+          <p class="text-muted">Rejected Requests</p>
+        </div>
       </div>
     </div>
-  </div>
-  <div class="col-md-4">
-    <div class="small-box bg-warning">
-      <div class="inner">
-        <h3>{{ forwarded }}</h3>
-        <p>Forwarded to VP</p>
+
+    <div class="col-lg-4 col-md-6">
+      <div class="card shadow-sm border-0">
+        <div class="card-body text-center">
+          <h1 class="display-5 text-warning">{{ forwarded }}</h1>
+          <p class="text-muted">Forwarded to VP</p>
+        </div>
       </div>
     </div>
+
   </div>
+
+  <!-- Analytics Section -->
+  <div class="row mt-4">
+
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-header">
+          <strong>Request Overview</strong>
+        </div>
+        <div class="card-body">
+          <canvas id="requestChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-header">
+          <strong>Quick Actions</strong>
+        </div>
+        <div class="card-body">
+          <a href="{% url 'college_dean:pending_requests' %}" class="btn btn-primary btn-block mb-2">
+            Pending Requests
+          </a>
+          <a href="{% url 'college_dean:sent_requests' %}" class="btn btn-success btn-block mb-2">
+            Sent Requests
+          </a>
+          <a href="{% url 'college_dean:notifications' %}" class="btn btn-warning btn-block mb-2">
+            Notifications
+          </a>
+          <a href="{% url 'college_dean:profile' %}" class="btn btn-secondary btn-block">
+            Profile
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
 </div>
+
+
 {% endblock %}

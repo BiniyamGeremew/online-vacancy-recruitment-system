@@ -5,6 +5,12 @@
 {% block content %}
 <div class="container mt-4">
 
+  <div class="d-flex justify-content-end mb-3">
+    <a href="{% url 'college_dean:pending_requests' %}" class="btn btn-secondary btn-sm">
+      Back to Pending Requests
+    </a>
+  </div>
+
   <!-- Request Info -->
   <div class="card mb-4">
     <div class="card-header">
@@ -50,32 +56,32 @@
   </div>
 
   <!-- Actions -->
-<div class="row mb-4">
+  <div class="row mb-4">
 
-  <!-- Reject -->
-  <div class="col-md-6">
-    <form method="post" action="{% url 'college_dean:reject_request' request_obj.pk %}">
-      {% csrf_token %}
-      <label class="form-label">Reject Reason</label>
-      <div class="mb-2">
-        {{ reject_form.reason }}
-      </div>
-      <button class="btn btn-danger btn-sm">Reject</button>
-    </form>
+    <!-- Reject -->
+    <div class="col-md-6">
+      <form method="post" action="{% url 'college_dean:reject_request' request_obj.pk %}">
+        {% csrf_token %}
+        <label class="form-label">Reject Reason</label>
+        <div class="mb-2">
+          {{ reject_form.reason }}
+        </div>
+        <button class="btn btn-danger btn-sm">Reject</button>
+      </form>
+    </div>
+
+    <!-- Forward -->
+    <div class="col-md-6">
+      <form method="post" action="{% url 'college_dean:forward_request' request_obj.pk %}">
+        {% csrf_token %}
+        <label class="form-label">Forward Comment</label>
+        <div class="mb-2">
+          {{ forward_form.reason }}
+        </div>
+        <button class="btn btn-warning btn-sm">Forward to HR</button>
+      </form>
+    </div>
+
   </div>
-
-  <!-- Forward -->
-  <div class="col-md-6">
-    <form method="post" action="{% url 'college_dean:forward_request' request_obj.pk %}">
-      {% csrf_token %}
-      <label class="form-label">Forward Comment</label>
-      <div class="mb-2">
-        {{ forward_form.reason }}
-      </div>
-      <button class="btn btn-warning btn-sm">Forward</button>
-    </form>
-  </div>
-
-</div>
 </div>
 {% endblock %}

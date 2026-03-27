@@ -1,17 +1,62 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}HR Dashboard{% endblock %}
 
 {% block content %}
-<h1>
-    Welcome, 
-    {% if user.groups.all %}
-        {{ user.groups.all.0.name }}
-    {% else %}
-        {{ user.username }}
-    {% endif %}
-!</h1>
 
-<h2>Your dashboard is coming soon.</h2>
+<div class="container-fluid">
+
+  <h2 class="mb-4">HR Dashboard</h2>
+
+  <div class="row">
+
+    <div class="col-md-4 mb-3">
+      <div class="card text-white bg-primary">
+        <div class="card-body">
+          <h5>Total Requests</h5>
+          <h3>{{ total_requests }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4 mb-3">
+      <div class="card text-white bg-warning">
+        <div class="card-body">
+          <h5>Vacancies</h5>
+          <h3>{{ vacancy_count }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4 mb-3">
+      <div class="card text-white bg-info">
+        <div class="card-body">
+          <h5>Screening</h5>
+          <h3>{{ screening_count }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 mb-3">
+      <div class="card text-white bg-secondary">
+        <div class="card-body">
+          <h5>Interviews</h5>
+          <h3>{{ interview_count }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 mb-3">
+      <div class="card text-white bg-success">
+        <div class="card-body">
+          <h5>Hired</h5>
+          <h3>{{ hired_count }}</h3>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
 
 {% endblock %}
