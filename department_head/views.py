@@ -3,7 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView, DetailView, UpdateView
+from django.views import View
 from django.contrib import messages
+from django.http import HttpResponseForbidden
 
 from .forms import (
     EmployeeRequestForm,
@@ -11,8 +13,7 @@ from .forms import (
     EmployeeRequestItemFormsetCreate,
 )
 from .models import EmployeeRequest
-from django.views import View
-from django.http import HttpResponseForbidden
+from organization.constants import RequestStatus
 
 
 @login_required
@@ -24,8 +25,6 @@ class DepartmentHeadRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
         user = self.request.user
 
-        # First check the user's profile department (preferred), then fall back
-        # to any Department where this user is assigned as `head`.
         profile = getattr(user, 'userprofile', None)
         if profile and profile.department and profile.department.head == user:
             return True
@@ -42,32 +41,38 @@ class SubmitEmployeeRequestView(DepartmentHeadRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
         if self.request.method == 'POST':
             context['formset'] = EmployeeRequestItemFormsetCreate(self.request.POST)
         else:
             context['formset'] = EmployeeRequestItemFormsetCreate()
+
         return context
 
     def form_valid(self, form):
         user = self.request.user
         profile = getattr(user, 'userprofile', None)
+
         if not profile or not profile.department:
-            form.add_error(None, 'Your user profile is not linked to a department.')
+            form.add_error(None, 'Your profile is not linked to a department.')
             return self.form_invalid(form)
 
         instance = form.save(commit=False)
         instance.created_by = user
         instance.department = profile.department
+        instance.status = RequestStatus.SUBMITTED
         instance.save()
 
         formset = EmployeeRequestItemFormsetCreate(self.request.POST, instance=instance)
+
         if formset.is_valid():
             formset.save()
-            messages.success(self.request, 'Employee request submitted successfully.')
+            messages.success(self.request, 'Request submitted successfully.')
             return redirect(self.success_url)
         else:
             instance.delete()
             return self.form_invalid(form)
+
 
 class MyEmployeeRequestsView(LoginRequiredMixin, ListView):
     model = EmployeeRequest
@@ -75,17 +80,24 @@ class MyEmployeeRequestsView(LoginRequiredMixin, ListView):
     context_object_name = 'requests'
 
     def get_queryset(self):
-        user = self.request.user
-        profile = getattr(user, 'userprofile', None)
+        profile = getattr(self.request.user, 'userprofile', None)
+
         if not profile or not profile.department:
             return EmployeeRequest.objects.none()
-        return EmployeeRequest.objects.filter(department=profile.department).order_by('-date_submitted')
+
+        return EmployeeRequest.objects.filter(
+            department=profile.department
+        ).order_by('-date_submitted')
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['STATUS_SUBMITTED'] = EmployeeRequest.STATUS_SUBMITTED
-        return ctx
 
+        ctx['STATUS_SUBMITTED'] = RequestStatus.SUBMITTED
+        ctx['STATUS_APPROVED_BY_DEAN'] = RequestStatus.APPROVED_BY_DEAN
+        ctx['STATUS_REJECTED_BY_DEAN'] = RequestStatus.REJECTED_BY_DEAN
+        ctx['STATUS_FORWARDED_TO_VP'] = RequestStatus.FORWARDED_TO_VP
+
+        return ctx
 
 class EmployeeRequestDetailView(LoginRequiredMixin, DetailView):
     model = EmployeeRequest
@@ -93,12 +105,10 @@ class EmployeeRequestDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'request_obj'
 
     def get_queryset(self):
-        user = self.request.user
-        profile = getattr(user, 'userprofile', None)
-        qs = super().get_queryset()
+        profile = getattr(self.request.user, 'userprofile', None)
         if profile and profile.department:
-            return qs.filter(department=profile.department)
-        return qs.none()
+            return EmployeeRequest.objects.filter(department=profile.department)
+        return EmployeeRequest.objects.none()
 
 
 class UpdateEmployeeRequestView(DepartmentHeadRequiredMixin, UpdateView):
@@ -109,44 +119,56 @@ class UpdateEmployeeRequestView(DepartmentHeadRequiredMixin, UpdateView):
 
     def dispatch(self, request, *args, **kwargs):
         obj = self.get_object()
-        if obj.status != EmployeeRequest.STATUS_SUBMITTED:
+
+        if obj.status != RequestStatus.SUBMITTED:
             messages.error(request, 'Only submitted requests can be edited.')
             return redirect('department_head:request_detail', pk=obj.pk)
+
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
         if self.request.method == 'POST':
-            context['formset'] = EmployeeRequestItemFormset(self.request.POST, instance=self.object)
+            context['formset'] = EmployeeRequestItemFormset(
+                self.request.POST, instance=self.object
+            )
         else:
             context['formset'] = EmployeeRequestItemFormset(instance=self.object)
+
         return context
 
     def form_valid(self, form):
-        instance = form.save()
+        instance = form.save(commit=False)
+        instance.save()
+
         formset = EmployeeRequestItemFormset(self.request.POST, instance=instance)
+
         if formset.is_valid():
             formset.save()
-            messages.success(self.request, 'Employee request updated.')
+            messages.success(self.request, 'Request updated successfully.')
             return redirect(self.success_url)
+
         return self.form_invalid(form)
 
 
 class DeleteEmployeeRequestView(DepartmentHeadRequiredMixin, View):
     def post(self, request, pk):
         obj = get_object_or_404(EmployeeRequest, pk=pk)
-        # ensure this request belongs to the department of the user
+
         profile = getattr(request.user, 'userprofile', None)
+
         if not profile or not profile.department or obj.department != profile.department:
             return HttpResponseForbidden()
 
-        if obj.status != EmployeeRequest.STATUS_SUBMITTED:
+        if obj.status != RequestStatus.SUBMITTED:
             messages.error(request, 'Only submitted requests can be deleted.')
             return redirect('department_head:request_detail', pk=obj.pk)
 
         obj.delete()
-        messages.success(request, 'Employee request deleted.')
+        messages.success(request, 'Request deleted.')
         return redirect('department_head:my_requests')
+
 
 class ApprovedEmployeeRequestsView(LoginRequiredMixin, ListView):
     model = EmployeeRequest
@@ -154,28 +176,29 @@ class ApprovedEmployeeRequestsView(LoginRequiredMixin, ListView):
     context_object_name = 'requests'
 
     def get_queryset(self):
-        user = self.request.user
-        profile = getattr(user, 'userprofile', None)
+        profile = getattr(self.request.user, 'userprofile', None)
+
         if not profile or not profile.department:
             return EmployeeRequest.objects.none()
 
         return EmployeeRequest.objects.filter(
             department=profile.department,
-            status=EmployeeRequest.STATUS_APPROVED
+            status=RequestStatus.APPROVED_BY_DEAN
         ).order_by('-date_submitted')
-    
+
+
 class RejectedEmployeeRequestsView(LoginRequiredMixin, ListView):
     model = EmployeeRequest
     template_name = 'department_head/rejected_request.html'
     context_object_name = 'requests'
 
-    def get_queryset(self): 
-        user = self.request.user
-        profile = getattr(user, 'userprofile', None)
+    def get_queryset(self):
+        profile = getattr(self.request.user, 'userprofile', None)
+
         if not profile or not profile.department:
             return EmployeeRequest.objects.none()
 
         return EmployeeRequest.objects.filter(
             department=profile.department,
-            status=EmployeeRequest.STATUS_REJECTED
-        ).order_by('-date_submitted') 
+            status=RequestStatus.REJECTED_BY_DEAN
+        ).order_by('-date_submitted')

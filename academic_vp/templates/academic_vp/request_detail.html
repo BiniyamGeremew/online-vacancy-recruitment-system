@@ -3,53 +3,121 @@
 {% block title %}Request Review{% endblock %}
 
 {% block content %}
-<div class="card">
-  <div class="card-body">
-    <h3>{{ request_obj.subject }}</h3>
-    <p><strong>Department:</strong> {{ request_obj.department.name }}</p>
-    <p>{{ request_obj.description }}</p>
 
-    <h5 class="mt-3">Positions</h5>
-    <ul>
-      {% for item in request_obj.items.all %}
-      <li>{{ item.academic_qualification }} / {{ item.academic_rank }} — {{ item.number_of_employees }} ({{ item.get_sex_display }})</li>
-      {% endfor %}
-    </ul>
+<div class="container mt-4">
 
-    <div class="mt-3">
-      <form method="post" action="{% url 'academic_vp:approve_request' request_obj.pk %}" style="display:inline-block">
-        {% csrf_token %}
-        {{ approve_form.confirm }}
-        <button class="btn btn-success btn-sm" type="submit">Approve</button>
-      </form>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="fw-bold mb-0">Request Review</h4>
 
-      <button class="btn btn-danger btn-sm" data-bs-toggle="collapse" data-bs-target="#rejectForm">Reject</button>
-      <div class="collapse mt-2" id="rejectForm">
-        <form method="post" action="{% url 'academic_vp:reject_request' request_obj.pk %}">
-          {% csrf_token %}
-          {{ reject_form.rejection_reason }}
-          <div class="mt-2"><button class="btn btn-danger btn-sm" type="submit">Submit Rejection</button></div>
-        </form>
-      </div>
-
-      <button class="btn btn-warning btn-sm" data-bs-toggle="collapse" data-bs-target="#forwardForm">Forward to HR</button>
-      <div class="collapse mt-2" id="forwardForm">
-        <form method="post" action="{% url 'academic_vp:forward_request' request_obj.pk %}">
-          {% csrf_token %}
-          {{ forward_form.comment }}
-          <div class="mt-2"><button class="btn btn-warning btn-sm" type="submit">Forward</button></div>
-        </form>
-      </div>
-
-    <h5 class="mt-4">Past Actions</h5>
-    <ul>
-      {% for act in actions %}
-      <li>{{ act.performed_at|date:"Y-m-d H:i" }} — {{ act.get_action_display }} by {{ act.performed_by }}{% if act.comment %}: {{ act.comment }}{% endif %}</li>
-      {% empty %}
-      <li>No actions yet.</li>
-      {% endfor %}
-    </ul>
+<a href="{% url 'academic_vp:pending_requests' %}" class="btn btn-secondary btn-sm">
+  Back to Pending Requests
+</a>
 
   </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body">
+
+  <!-- REQUEST INFO -->
+  <div class="mb-4">
+    <h3 class="fw-bold">{{ request_obj.subject }}</h3>
+    <p class="text-muted mb-1">
+      <strong>Department:</strong> {{ request_obj.department.name }}
+    </p>
+    <p class="mb-0">{{ request_obj.description }}</p>
+  </div>
+
+  <!-- POSITIONS -->
+  <div class="mb-4">
+    <h5 class="fw-semibold mb-3">Position Requirements</h5>
+
+    <table class="table table-bordered table-sm">
+      <thead class="table-light">
+        <tr>
+          <th>Qualification</th>
+          <th>Rank</th>
+          <th>Employees</th>
+          <th>Gender</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in request_obj.items.all %}
+        <tr>
+          <td>{{ item.academic_qualification }}</td>
+          <td>{{ item.academic_rank }}</td>
+          <td>{{ item.number_of_employees }}</td>
+          <td>{{ item.get_sex_display }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" class="text-center text-muted">
+            No position requirements available.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ACTIONS -->
+  <div class="mb-3">
+    <h5 class="fw-semibold mb-3">Actions</h5>
+
+    <div class="row g-4">
+
+      <!-- REJECT -->
+      <div class="col-md-6">
+        <div class="card border-danger">
+          <div class="card-body">
+
+            <form method="post" action="{% url 'academic_vp:reject_request' request_obj.pk %}">
+              {% csrf_token %}
+
+              <label class="form-label fw-semibold">Rejection Reason</label>
+              <div class="mb-2">
+                {{ reject_form.rejection_reason }}
+              </div>
+
+              <button class="btn btn-danger btn-sm">
+                Reject Request
+              </button>
+
+            </form>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- FORWARD -->
+      <div class="col-md-6">
+        <div class="card border-warning">
+          <div class="card-body">
+
+            <form method="post" action="{% url 'academic_vp:forward_request' request_obj.pk %}">
+              {% csrf_token %}
+
+              <label class="form-label fw-semibold">Forward Comment</label>
+              <div class="mb-2">
+                {{ forward_form.comment }}
+              </div>
+
+              <button class="btn btn-warning btn-sm">
+                Forward to HR
+              </button>
+
+            </form>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
 </div>
+
+  </div>
+
+</div>
+
 {% endblock %}

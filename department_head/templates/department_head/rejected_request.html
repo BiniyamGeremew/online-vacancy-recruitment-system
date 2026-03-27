@@ -5,48 +5,94 @@
 {% block content %}
 
 <div class="container-fluid">
-  <div class="card">
+
+  <div class="card shadow-sm border-0">
+
     <div class="card-header d-flex justify-content-between align-items-center">
       <h3 class="card-title">Rejected Department Requests</h3>
-      <a href="{% url 'department_head:submit_request' %}" class="btn btn-sm btn-primary">New Request</a>
+
+      <a href="{% url 'department_head:submit_request' %}" class="btn btn-sm btn-primary">
+        + New Request
+      </a>
     </div>
+
     <div class="card-body">
+
       <div class="table-responsive">
-        <table class="table table-hover">
-          <thead>
+        <table class="table table-hover align-middle">
+
+          <thead class="table-light">
             <tr>
               <th>Subject</th>
               <th>Date Submitted</th>
               <th>Status</th>
-              <th></th>
+              <th class="text-end">Actions</th>
             </tr>
           </thead>
+
           <tbody>
+
             {% for r in requests %}
+
             <tr>
-              <td>{{ r.subject }}</td>
+
+              <td class="fw-semibold">{{ r.subject }}</td>
+
               <td>{{ r.date_submitted|date:"Y-m-d H:i" }}</td>
+
               <td>
-                <span class="badge bg-danger">Rejected</span>
+
+                {% if r.status == STATUS_REJECTED_BY_DEAN %}
+                  <span class="badge bg-danger">Rejected by Dean</span>
+
+                {% elif r.status == STATUS_REJECTED_BY_VP %}
+                  <span class="badge bg-dark">Rejected by VP</span>
+
+                {% else %}
+                  <span class="badge bg-secondary">{{ r.status }}</span>
+                {% endif %}
+
               </td>
-              <td>
-                <a href="{% url 'department_head:request_detail' r.pk %}" class="btn btn-sm btn-outline-primary">View</a>
 
-                {# Disabled Edit button #}
-                <button class="btn btn-sm btn-outline-secondary" disabled>Edit</button>
+              <td class="text-end">
 
-                {# Disabled Delete button #}
-                <button class="btn btn-sm btn-outline-danger" disabled>Delete</button>
+                <a href="{% url 'department_head:request_detail' r.pk %}"
+                   class="btn btn-sm btn-outline-primary">
+                  View
+                </a>
+
+                <!-- Disabled actions -->
+                <button class="btn btn-sm btn-outline-secondary" disabled>
+                  Edit
+                </button>
+
+                <button class="btn btn-sm btn-outline-danger" disabled>
+                  Delete
+                </button>
+
+              </td>
+
+            </tr>
+
+            {% empty %}
+
+            <tr>
+              <td colspan="4" class="text-center text-muted">
+                No rejected requests found.
               </td>
             </tr>
-            {% empty %}
-            <tr><td colspan="4">No rejected requests found.</td></tr>
+
             {% endfor %}
+
           </tbody>
+
         </table>
       </div>
+
     </div>
+
   </div>
+
 </div>
 
 {% endblock %}

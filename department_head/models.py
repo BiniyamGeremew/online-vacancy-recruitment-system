@@ -2,20 +2,16 @@ from django.db import models
 from django.conf import settings
 
 from organization.models import TimeStampedModel
+from organization.constants import RequestStatus
 
 
 class EmployeeRequest(TimeStampedModel):
-    STATUS_SUBMITTED = 'Submitted'
-    STATUS_APPROVED = 'Approved'
-    STATUS_REJECTED = 'Rejected'
-    STATUS_FORWARDED_TO_VP = 'Forwarded to VP'
+    STATUS_SUBMITTED = RequestStatus.SUBMITTED
+    STATUS_APPROVED_BY_DEAN = RequestStatus.APPROVED_BY_DEAN
+    STATUS_REJECTED_BY_DEAN = RequestStatus.REJECTED_BY_DEAN
+    STATUS_FORWARDED_TO_VP = RequestStatus.FORWARDED_TO_VP
 
-    STATUS_CHOICES = [
-        (STATUS_SUBMITTED, 'Submitted'),
-        (STATUS_APPROVED, 'Approved'),
-        (STATUS_REJECTED, 'Rejected'),
-        (STATUS_FORWARDED_TO_VP, 'Forwarded to VP'),
-    ]
+    STATUS_CHOICES = RequestStatus.CHOICES
 
     department = models.ForeignKey(
         'organization.Department',
@@ -31,7 +27,12 @@ class EmployeeRequest(TimeStampedModel):
     subject = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     closing_note = models.TextField(blank=True)
-    status = models.CharField(max_length=32, choices=STATUS_CHOICES, default=STATUS_SUBMITTED)
+
+    status = models.CharField(
+        max_length=50,
+        choices=STATUS_CHOICES,
+        default=STATUS_SUBMITTED
+    )
 
     class Meta:
         ordering = ['-date_submitted']
@@ -48,8 +49,9 @@ class EmployeeRequestItem(TimeStampedModel):
     SEX_ANY = 'A'
 
     SEX_CHOICES = [
-            (SEX_MALE, 'Male'),
-            (SEX_FEMALE, 'Female'),
+        (SEX_MALE, 'Male'),
+        (SEX_FEMALE, 'Female'),
+        (SEX_ANY, 'Any'),
     ]
 
     request = models.ForeignKey(

@@ -4,18 +4,119 @@
 
 {% block content %}
 
-<div class="row mt-3">
-  <div class="col-md-3">
-    <div class="small-box bg-info"><div class="inner"><h3>{{ pending }}</h3><p>Pending (to review)</p></div></div>
+<div class="container mt-3">
+
+  <!-- STAT CARDS -->
+  <div class="row">
+
+    <div class="col-md-3">
+      <a href="{% url 'academic_vp:pending_requests' %}" style="text-decoration: none;">
+        <div class="small-box bg-info text-white p-3 rounded">
+          <div class="inner">
+            <h3>{{ pending }}</h3>
+            <p>Pending Requests</p>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-3">
+      <a href="{% url 'academic_vp:pending_requests' %}" style="text-decoration: none;">
+        <div class="small-box bg-success text-white p-3 rounded">
+          <div class="inner">
+            <h3>{{ approved }}</h3>
+            <p>Approved by VP</p>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-3">
+      <a href="{% url 'academic_vp:rejected_requests' %}" style="text-decoration: none;">
+        <div class="small-box bg-danger text-white p-3 rounded">
+          <div class="inner">
+            <h3>{{ rejected }}</h3>
+            <p>Rejected by VP</p>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-md-3">
+      <a href="{% url 'academic_vp:sent_requests' %}" style="text-decoration: none;">
+        <div class="small-box bg-warning text-white p-3 rounded">
+          <div class="inner">
+            <h3>{{ forwarded }}</h3>
+            <p>Forwarded to HR</p>
+          </div>
+        </div>
+      </a>
+    </div>
+
   </div>
-  <div class="col-md-3">
-    <div class="small-box bg-success"><div class="inner"><h3>{{ approved }}</h3><p>Approved</p></div></div>
+
+  <!-- ANALYTICS SECTION -->
+  <div class="row mt-4">
+
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          Request Status Overview
+        </div>
+        <div class="card-body">
+
+          <p>Total Pending: <strong>{{ pending }}</strong></p>
+          <p>Total Approved: <strong>{{ approved }}</strong></p>
+          <p>Total Rejected: <strong>{{ rejected }}</strong></p>
+          <p>Total Forwarded to HR: <strong>{{ forwarded }}</strong></p>
+
+          <hr>
+
+          <p>
+            Approval Rate:
+            <strong>
+              {% if pending|add:approved|add:rejected > 0 %}
+                {{ approved|floatformat:2 }}%
+              {% else %}
+                0%
+              {% endif %}
+            </strong>
+          </p>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- QUICK ACTIONS -->
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          Quick Actions
+        </div>
+        <div class="card-body">
+
+          <a href="{% url 'academic_vp:pending_requests' %}" class="btn btn-primary mb-2 w-100">
+            Review Pending Requests
+          </a>
+
+          <a href="{% url 'academic_vp:sent_requests' %}" class="btn btn-success mb-2 w-100">
+            View Sent Actions
+          </a>
+
+          <a href="{% url 'academic_vp:notifications' %}" class="btn btn-info mb-2 w-100">
+            View Notifications
+          </a>
+
+          <a href="{% url 'academic_vp:profile' %}" class="btn btn-secondary w-100">
+            My Profile
+          </a>
+
+        </div>
+      </div>
+    </div>
+
   </div>
-  <div class="col-md-3">
-    <div class="small-box bg-danger"><div class="inner"><h3>{{ rejected }}</h3><p>Rejected</p></div></div>
-  </div>
-  <div class="col-md-3">
-    <div class="small-box bg-warning"><div class="inner"><h3>{{ forwarded }}</h3><p>Forwarded to HR</p></div></div>
-  </div>
+
 </div>
+
 {% endblock %}

@@ -5,59 +5,118 @@
 {% block content %}
 
 <div class="container-fluid">
-  <div class="card">
+
+  <div class="card shadow-sm border-0">
+
     <div class="card-header d-flex justify-content-between align-items-center">
       <h3 class="card-title">My Department Requests</h3>
-      <a href="{% url 'department_head:submit_request' %}" class="btn btn-sm btn-primary">New Request</a>
+      <a href="{% url 'department_head:submit_request' %}" class="btn btn-sm btn-primary">
+        + New Request
+      </a>
     </div>
+
     <div class="card-body">
+
       <div class="table-responsive">
-        <table class="table table-hover">
-          <thead>
+        <table class="table table-hover align-middle">
+
+          <thead class="table-light">
             <tr>
               <th>Subject</th>
               <th>Date Submitted</th>
               <th>Status</th>
-              <th></th>
+              <th class="text-end">Actions</th>
             </tr>
           </thead>
-          <tbody>
-            {% for r in requests %}
-            <tr>
-              <td>{{ r.subject }}</td>
-              <td>{{ r.date_submitted|date:"Y-m-d H:i" }}</td>
-              <td>
-                {% if r.status == 'Draft' %}<span class="badge bg-secondary">Draft</span>{% elif r.status == 'Submitted' %}<span class="badge bg-info">Submitted</span>{% elif r.status == 'Approved' %}<span class="badge bg-success">Approved</span>{% elif r.status == 'Rejected' %}<span class="badge bg-danger">Rejected</span>{% endif %}
-              </td>
-              <td>
-                <a href="{% url 'department_head:request_detail' r.pk %}" class="btn btn-sm btn-outline-primary">View</a>
 
-                {# Edit button: active only when status is Submitted #}
+          <tbody>
+
+            {% for r in requests %}
+
+            <tr>
+
+              <td class="fw-semibold">{{ r.subject }}</td>
+
+              <td>{{ r.date_submitted|date:"Y-m-d H:i" }}</td>
+
+              <td>
+
                 {% if r.status == STATUS_SUBMITTED %}
-                  <a href="{% url 'department_head:request_update' r.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                  <span class="badge bg-info">Submitted</span>
+
+                {% elif r.status == STATUS_APPROVED_BY_DEAN %}
+                  <span class="badge bg-success">Approved</span>
+
+                {% elif r.status == STATUS_REJECTED_BY_DEAN %}
+                  <span class="badge bg-danger">Rejected</span>
+
+                {% elif r.status == STATUS_FORWARDED_TO_VP %}
+                  <span class="badge bg-primary">Forwarded to VP</span>
+
                 {% else %}
-                  <button class="btn btn-sm btn-outline-secondary" disabled>Edit</button>
+                  <span class="badge bg-secondary">{{ r.status }}</span>
                 {% endif %}
 
-                {# Delete button: POST form, active only when status is Submitted #}
-                <form method="post" action="{% url 'department_head:request_delete' r.pk %}" style="display:inline-block">
-                  {% csrf_token %}
-                  {% if r.status == STATUS_SUBMITTED %}
-                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                  {% else %}
-                    <button type="submit" class="btn btn-sm btn-outline-danger" disabled>Delete</button>
-                  {% endif %}
-                </form>
+              </td>
+
+              <td class="text-end">
+
+                <a href="{% url 'department_head:request_detail' r.pk %}"
+                   class="btn btn-sm btn-outline-primary">
+                  View
+                </a>
+
+                {% if r.status == STATUS_SUBMITTED %}
+
+                  <a href="{% url 'department_head:request_update' r.pk %}"
+                     class="btn btn-sm btn-outline-secondary">
+                    Edit
+                  </a>
+
+                  <form method="post"
+                        action="{% url 'department_head:request_delete' r.pk %}"
+                        style="display:inline-block">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                      Delete
+                    </button>
+                  </form>
+
+                {% else %}
+
+                  <button class="btn btn-sm btn-outline-secondary" disabled>
+                    Edit
+                  </button>
+
+                  <button class="btn btn-sm btn-outline-danger" disabled>
+                    Delete
+                  </button>
+
+                {% endif %}
+
+              </td>
+
+            </tr>
+
+            {% empty %}
+
+            <tr>
+              <td colspan="4" class="text-center text-muted">
+                No requests found.
               </td>
             </tr>
-            {% empty %}
-            <tr><td colspan="4">No requests found.</td></tr>
+
             {% endfor %}
+
           </tbody>
+
         </table>
       </div>
+
     </div>
+
   </div>
+
 </div>
 
 {% endblock %}
