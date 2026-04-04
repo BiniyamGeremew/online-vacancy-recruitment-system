@@ -18,7 +18,25 @@ from organization.constants import RequestStatus
 
 @login_required
 def dashboard(request):
-    return render(request, 'department_head/dashboard.html')
+    profile = getattr(request.user, "userprofile", None)
+
+    if not profile or not profile.department:
+        return render(request, "department_head/dashboard.html")
+
+    department = profile.department
+
+    qs = EmployeeRequest.objects.filter(department=department)
+
+    context = {
+        "total_requests": qs.count(),
+        "submitted_count": qs.filter(status=RequestStatus.SUBMITTED).count(),
+        "approved_count": qs.filter(status=RequestStatus.APPROVED_BY_DEAN).count(),
+        "rejected_count": qs.filter(status=RequestStatus.REJECTED_BY_DEAN).count(),
+        "forwarded_count": qs.filter(status=RequestStatus.FORWARDED_TO_VP).count(),
+        "recent_requests": qs.order_by("-date_submitted")[:5],
+    }
+
+    return render(request, "department_head/dashboard.html", context)
 
 
 class DepartmentHeadRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):

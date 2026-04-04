@@ -13,8 +13,11 @@ def dashboard(request):
     user = request.user
 
     total_requests = EmployeeRequest.objects.filter(
-        hr_actions__performed_by=user
-    ).distinct().count()
+        status__in=[RequestStatus.FORWARDED_TO_HR,
+                    RequestStatus.SCREENING,
+                    RequestStatus.INTERVIEW,
+                    RequestStatus.HIRED]
+    ).count()
 
     vacancy_count = HRAction.objects.filter(
         action=HRAction.ACTION_VACANCY
@@ -49,7 +52,12 @@ def hr_requests_list(request):
     Show requests that reached HR stage (forwarded to VP or beyond)
     """
     requests = EmployeeRequest.objects.filter(
-        status=RequestStatus.FORWARDED_TO_VP
+        status__in=[
+            RequestStatus.FORWARDED_TO_HR,
+            RequestStatus.SCREENING,
+            RequestStatus.INTERVIEW,
+            RequestStatus.HIRED
+        ]
     ).order_by('-date_submitted')
 
     return render(request, 'hr_officer/requests_list.html', {
@@ -68,6 +76,8 @@ def request_detail(request, pk):
         'actions': actions
     })
 
+
+'''
 @login_required
 def add_hr_action(request, pk):
     req = get_object_or_404(EmployeeRequest, pk=pk)
@@ -102,3 +112,7 @@ def my_actions(request):
     return render(request, 'hr_officer/my_actions.html', {
         'actions': actions
     })
+'''
+
+
+
