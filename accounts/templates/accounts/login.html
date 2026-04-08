@@ -2,205 +2,375 @@
 {% load form_tags %}
 
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Login | HU-HRMD-OVRS</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<title>Login | HU-HRMD-OVRS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="stylesheet" href="{% static 'adminlte/plugins/fontawesome-free/css/all.min.css' %}">
-    <link rel="stylesheet" href="{% static 'adminlte/dist/css/adminlte.min.css' %}">
+<link rel="stylesheet" href="{% static 'adminlte/plugins/fontawesome-free/css/all.min.css' %}">
+<link rel="stylesheet" href="{% static 'adminlte/dist/css/adminlte.min.css' %}">
 
-    <style>
-        body {
-            background: #f4f6f9;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            margin: 0;
-        }
+<style>
 
-        /* Header */
-        .hu-header {
-            background: #28a745;
-            color: #fff;
-            padding: 16px 24px;
-            font-weight: bold;
-            text-align: left;
-            width: 100%;
-        }
-        .hu-header small {
-            display: block;
-            font-weight: normal;
-            font-size: 0.85rem;
-        }
+html, body{
+    margin:0;
+    padding:0;
+    width:100%;
+    overflow-x:hidden;
+    background:#f4f6f9;
+    font-family:"Segoe UI", sans-serif;
+}
 
-        /* Login wrapper */
-        .login-wrapper {
-            flex: 1;
-            display: flex;
-            justify-content: center;
-            padding: 30px 12px;
-            width: 100%;
-        }
+/* HEADER */
 
-        .login-box-custom {
-            background: #fff;
-            width: 100%;
-            max-width: 360px;
-            padding: 24px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-        }
+.hu-header{
+    background:#28a745;
+    color:#fff;
+    padding:16px 24px;
+    font-weight:bold;
+    width:100%;
+}
 
-        .login-logo {
-            width: 90px;
-            height: 90px;
-            margin: 0 auto 16px;
-            display: block;
-        }
+.hu-header small{
+    display:block;
+    font-weight:normal;
+    font-size:0.85rem;
+}
 
-        .login-info {
-            font-size: 0.9rem;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .login-info a {
-            font-weight: bold;
-            color: #28a745;
-        }
 
-        /* Form */
-        .form-group {
-            margin-bottom: 16px;
-        }
-        .form-label {
-            display: flex;
-            align-items: center;
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-bottom: 6px;
-        }
-        .form-label i {
-            margin-right: 8px;
-            color: #28a745;
-        }
-        .form-control {
-            font-size: 0.9rem;
-            padding: 10px;
-        }
+/* MAIN LOGIN */
 
-        .btn-login {
-            width: 100%;
-            padding: 10px;
-            font-size: 1rem;
-        }
+.login-wrapper{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:30px;
+    padding:40px 20px;
+    min-height:calc(100vh - 120px);
+}
 
-        .forgot-link {
-            font-size: 0.9rem;
-            text-align: center;
-            margin-top: 10px;
-        }
 
-        .main-footer {
-            background: #343a40;
-            color: #fff;
-            border-top: none;
-            width: 100%;
-            margin-left: 0 !important;  
-            text-align: center;
-            font-size: 0.85rem;
-            padding: 12px 0;
-        }
-        .main-footer a {
-            color: #fff;
-            font-weight: 600;
-        }
+/* LEFT INFO PANEL */
 
-        
-        @media (max-width: 576px) {
-            .login-box-custom {
-                padding: 20px;
-            }
-            .login-info,
-            .forgot-link {
-                font-size: 0.85rem;
-            }
-        }
-    </style>
+.login-info-left{
+    background:linear-gradient(135deg,#28a745,#1e7e34);
+    color:#fff;
+    padding:30px 25px;
+    border-radius:14px;
+    max-width:420px;
+    width:100%;
+    box-shadow:0 6px 18px rgba(0,0,0,0.2);
+}
+
+.login-info-left h3{
+    font-size:1.6rem;
+    margin-bottom:20px;
+    font-weight:700;
+}
+
+.contact-item{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:15px;
+    font-size:0.95rem;
+    border-bottom:1px solid rgba(255,255,255,0.2);
+    padding-bottom:10px;
+}
+
+.contact-item i{
+    font-size:1.1rem;
+    margin-top:4px;
+}
+
+.login-info-left a{
+    color:#ffffff;
+    text-decoration:none;
+}
+
+.login-info-left a:hover{
+    color:#d4edda;
+}
+
+/* SOCIAL */
+
+.social-links{
+    display:flex;
+    gap:16px;
+    margin-top:18px;
+}
+
+.social-links a{
+    color:#fff;
+    font-size:1.3rem;
+    transition:0.3s;
+}
+
+.social-links a:hover{
+    color:#d4edda;
+}
+
+
+/* LOGIN BOX */
+
+.login-box-custom{
+    background:#fff;
+    max-width:360px;
+    width:100%;
+    padding:32px 26px;
+    border-radius:14px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.15);
+    animation:fadeIn 3s ease;
+}
+
+@keyframes fadeIn{
+    from{
+        opacity:0;
+        transform:translateY(15px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+.login-logo{
+    width:90px;
+    height:90px;
+    display:block;
+    margin:0 auto 16px;
+}
+
+.login-info{
+    text-align:center;
+    font-size:0.9rem;
+    margin-bottom:20px;
+}
+
+.login-info a{
+    color:#28a745;
+    font-weight:bold;
+    text-decoration:none;
+}
+
+.login-info a:hover{
+    text-decoration:underline;
+}
+
+
+/* FORM */
+
+.form-group{
+    margin-bottom:16px;
+}
+
+.form-label{
+    display:flex;
+    align-items:center;
+    font-size:0.85rem;
+    font-weight:600;
+    margin-bottom:6px;
+}
+
+.form-label i{
+    margin-right:8px;
+    color:#28a745;
+}
+
+.form-control{
+    font-size:0.9rem;
+    padding:10px;
+}
+
+
+/* BUTTON */
+
+.btn-login{
+    width:100%;
+    padding:12px;
+    font-size:1rem;
+    font-weight:600;
+    background:#28a745;
+    border:none;
+    border-radius:8px;
+    transition:0.3s;
+    color:#ffffff;
+}
+
+.btn-login:hover{
+    background:#218838;
+    color:#ffffff;
+}
+
+
+/* FORGOT PASSWORD */
+
+.forgot-link{
+    text-align:center;
+    margin-top:12px;
+    font-size:0.9rem;
+}
+
+
+/* FOOTER */
+
+.main-footer{
+    background:#343a40;
+    color:#fff;
+    width:100%;
+    text-align:center;
+    padding:12px 0;
+    font-size:0.85rem;
+    margin-left: 0 !important; 
+}
+
+.main-footer a{
+    color:#fff;
+    font-weight:600;
+}
+
+
+/* RESPONSIVE */
+
+@media(max-width:992px){
+
+.login-wrapper{
+    flex-direction:column;
+}
+
+.login-info-left{
+    max-width:100%;
+}
+
+}
+
+</style>
+
 </head>
+
 <body>
 
-<!-- Header -->
+<!-- HEADER -->
+
 <div class="hu-header">
-    Haramaya University
-    <small>Human Resource Management and Development Directorate</small>
+Haramaya University
+<small>Human Resource Management and Development Directorate</small>
 </div>
 
-<!-- Login Section -->
+<!-- LOGIN SECTION -->
+
 <div class="login-wrapper">
-    <div class="login-box-custom">
 
-        <img src="{% static 'img/HU.png' %}" alt="HU Logo" class="login-logo rounded-circle">
+<!-- HR INFO -->
 
-        <div class="login-info">
-            Is this your first time to our job site?<br>
-            <a href="{% url 'accounts:register' %}">Register Today</a><br><br>
-            Already registered on our job site?
-        </div>
+<div class="login-info-left">
 
-        <form method="post">
-            {% csrf_token %}
+<h3>Contact HR</h3>
 
-            {% if messages %}
-            <div class="mb-3">
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            {% if form.non_field_errors %}
-            <div class="mb-3">
-                <div class="alert alert-danger">{{ form.non_field_errors }}</div>
-            </div>
-            {% endif %}
-
-            <div class="form-group">
-                <label class="form-label">
-                    <i class="fas fa-envelope"></i> Email
-                </label>
-                {{ form.username|add_class:"form-control" }}
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">
-                    <i class="fas fa-lock"></i> Password
-                </label>
-                {{ form.password|add_class:"form-control" }}
-            </div>
-
-            <button type="submit" class="btn btn-success btn-login">
-                Login
-            </button>
-        </form>
-
-        <div class="forgot-link">
-            <a href="{% url 'accounts:password_reset' %}">Forgot Your Password?</a>
-        </div>
-
-    </div>
+<div class="contact-item">
+<i class="fas fa-map-marker-alt"></i>
+<div>
+New Administration Building, 1st Floor<br>
+P.O.Box: 138, Dire Dawa, Ethiopia
+</div>
 </div>
 
-<!-- Footer -->
+<div class="contact-item">
+<i class="fas fa-phone-alt"></i>
+<div>
+Office Phone: +251123456789<br>
+Mobile Phone: +251123456789
+</div>
+</div>
+
+<div class="contact-item">
+<i class="fas fa-envelope"></i>
+<div>
+<a href="#">huhrteam6@gmail.com</a>
+</div>
+</div>
+
+<div class="social-links">
+<a href="https://web.facebook.com/sharer.php?u=https%3A%2F%2Fwww.haramaya.edu.et%2Fhuman-resource-mgmt-and-development-directorate%2F&t=Human+Resource+Mgmt+and+Development+Directorate&_rdc=1&_rdr#"><i class="fab fa-facebook-f"></i></a>
+<a href="https://www.linkedin.com/uas/login?session_redirect=https%3A%2F%2Fwww.linkedin.com%2FshareArticle%3Furl%3Dhttps%253A%252F%252Fwww.haramaya.edu.et%252Fhuman-resource-mgmt-and-development-directorate%252F"><i class="fab fa-linkedin-in"></i></a>
+</div>
+
+</div>
+
+<!-- LOGIN FORM -->
+
+<div class="login-box-custom">
+
+<img src="{% static 'img/HU.png' %}" alt="HU Logo" class="login-logo rounded-circle">
+
+<div class="login-info">
+Is this your first time on our job site?<br>
+<a href="{% url 'accounts:register' %}">Register Today</a><br><br>
+Already registered on our job site?
+</div>
+
+<form method="post">
+{% csrf_token %}
+
+{% if messages %}
+
+<div class="mb-3">
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }}">{{ message }}</div>
+{% endfor %}
+</div>
+{% endif %}
+
+{% if form.non_field_errors %}
+
+<div class="mb-3">
+<div class="alert alert-danger">{{ form.non_field_errors }}</div>
+</div>
+{% endif %}
+
+<div class="form-group">
+<label class="form-label">
+<i class="fas fa-envelope"></i> Email
+</label>
+{{ form.username|add_class:"form-control" }}
+</div>
+
+<div class="form-group">
+<label class="form-label">
+<i class="fas fa-lock"></i> Password
+</label>
+{{ form.password|add_class:"form-control" }}
+</div>
+
+<button type="submit" class="btn btn-login">
+Login
+</button>
+
+</form>
+
+<div class="forgot-link">
+<a href="{% url 'accounts:password_reset' %}">Forgot Your Password?</a>
+</div>
+
+</div>
+
+</div>
+
+<!-- FOOTER -->
+
 <footer class="main-footer">
-    <strong>
-        &copy; 2026
-        <a href="https://www.haramaya.edu.et" target="_blank">
-            Haramaya University
-        </a>.
-    </strong>
-    All rights reserved.
+
+<strong>
+© 2026
+<a href="https://www.haramaya.edu.et" target="_blank">
+Haramaya University
+</a>.
+</strong>
+
+All rights reserved.
+
 </footer>
 
 </body>
