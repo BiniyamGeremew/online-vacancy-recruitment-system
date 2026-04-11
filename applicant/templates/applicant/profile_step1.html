@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Applicant Profile - Step 1{% endblock %}
+
+{% block content %}
+
+<div class="row mb-4">
+  <div class="col-12">
+    <h3>Profile completion: Step 1 of 4</h3>
+    <p class="text-muted">Enter your basic information before moving to documents and supporting records.</p>
+  </div>
+</div>
+
+<div class="card shadow-sm border-0">
+  <div class="card-header bg-primary text-white">
+    <h3 class="card-title mb-0">Basic Information</h3>
+  </div>
+
+  <div class="card-body">
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+  {% if form.errors %}
+  <div class="alert alert-danger">
+    <strong>Please correct the errors below.</strong>
+  </div>
+  {% endif %}
+
+  {{ form.non_field_errors }}
+
+  <div class="row g-3">
+
+    <div class="col-md-4">
+      {{ form.title.label_tag }}
+      {{ form.title }}
+      {{ form.title.errors }}
+    </div>
+
+    <div class="col-md-4">
+      {{ form.first_name.label_tag }}
+      {{ form.first_name }}
+      {{ form.first_name.errors }}
+    </div>
+
+    <div class="col-md-4">
+      {{ form.father_name.label_tag }}
+      {{ form.father_name }}
+      {{ form.father_name.errors }}
+    </div>
+
+    <div class="col-md-4">
+      {{ form.last_name.label_tag }}
+      {{ form.last_name }}
+      {{ form.last_name.errors }}
+    </div>
+
+    <div class="col-md-4">
+      {{ form.gender.label_tag }}
+      {{ form.gender }}
+      {{ form.gender.errors }}
+    </div>
+
+    <div class="col-md-4">
+      {{ form.birth_date.label_tag }}
+      {{ form.birth_date }}
+      {{ form.birth_date.errors }}
+    </div>
+
+    <div class="col-md-4">
+      {{ form.marital_status.label_tag }}
+      {{ form.marital_status }}
+      {{ form.marital_status.errors }}
+    </div>
+
+    <div class="col-md-4">
+      {{ form.email.label_tag }}
+      {{ form.email }}
+      {{ form.email.errors }}
+    </div>
+
+    <div class="col-md-4">
+      {{ form.mobile_number.label_tag }}
+      {{ form.mobile_number }}
+      {{ form.mobile_number.errors }}
+    </div>
+
+    <div class="col-md-4">
+      {{ form.country.label_tag }}
+      {{ form.country }}
+      {{ form.country.errors }}
+    </div>
+
+    <div class="col-md-4">
+      {{ form.region.label_tag }}
+      {{ form.region }}
+      {{ form.region.errors }}
+    </div>
+
+    <div class="col-md-4">
+      {{ form.zone.label_tag }}
+      {{ form.zone }}
+      {{ form.zone.errors }}
+    </div>
+
+    <div class="col-md-4">
+      {{ form.wereda.label_tag }}
+      {{ form.wereda }}
+      {{ form.wereda.errors }}
+    </div>
+
+    <div class="col-md-4">
+      {{ form.kebele.label_tag }}
+      {{ form.kebele }}
+      {{ form.kebele.errors }}
+    </div>
+
+    <div class="col-md-4">
+      {{ form.house_number.label_tag }}
+      {{ form.house_number }}
+      {{ form.house_number.errors }}
+    </div>
+
+    <div class="col-md-4">
+      {{ form.postal_code.label_tag }}
+      {{ form.postal_code }}
+      {{ form.postal_code.errors }}
+    </div>
+
+  </div>
+
+  <div class="mt-4 d-flex justify-content-between">
+    <a href="{% url 'applicant:dashboard' %}" class="btn btn-secondary">
+      Back to Dashboard
+    </a>
+
+    <button type="submit" class="btn btn-primary">
+      Save and Continue
+    </button>
+  </div>
+
+</form>
+
+  </div>
+</div>
+{% endblock %}
