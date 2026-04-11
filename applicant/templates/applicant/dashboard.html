@@ -1,16 +1,107 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Applicant Dashboard{% endblock %}
 
 {% block content %}
-<h1>
-    Welcome, 
-    {% if user.groups.all %}
-        {{ user.groups.all.0.name }}
-    {% else %}
-        {{ user.username }}
-    {% endif %}
-!</h1>
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+        <h4 class="card-title">Hello, {{ request.user.get_full_name|default:request.user.username }}</h4>
+        <p class="text-muted">Track your profile progress, upload documents, and prepare to apply for vacancies.</p>
+      </div>
+    </div>
+  </div>
+</div>
 
-<h2>Your dashboard is coming soon.</h2>
+<div class="row g-4">
+  <div class="col-sm-6 col-lg-3">
+    <div class="card shadow-sm border-0">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <h6 class="text-muted">Profile Progress</h6>
+          <h3 class="fw-bold">{{ progress_percent }}%</h3>
+        </div>
+        <i class="fas fa-chart-line fa-2x text-primary"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card shadow-sm border-0">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <h6 class="text-muted">Qualifications</h6>
+          <h3 class="fw-bold">{{ qualifications_count }}</h3>
+        </div>
+        <i class="fas fa-graduation-cap fa-2x text-success"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card shadow-sm border-0">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <h6 class="text-muted">Experiences</h6>
+          <h3 class="fw-bold">{{ employments_count }}</h3>
+        </div>
+        <i class="fas fa-briefcase fa-2x text-warning"></i>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card shadow-sm border-0">
+      <div class="card-body d-flex justify-content-between align-items-center">
+        <div>
+          <h6 class="text-muted">Uploaded Docs</h6>
+          <h3 class="fw-bold">{{ documents_count }}</h3>
+        </div>
+        <i class="fas fa-file-upload fa-2x text-info"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <div class="col-lg-4">
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+        <h5 class="card-title">Quick Actions</h5>
+        <p class="text-muted">Use the links below to complete your applicant profile and apply for jobs.</p>
+        <a href="{% url 'applicant:profile_step1' %}" class="btn btn-primary w-100 mb-2">Complete Profile</a>
+        <a href="{% url 'applicant:apply_jobs' %}" class="btn btn-success w-100 mb-2">Apply Jobs</a>
+        <a href="{% url 'applicant:applications' %}" class="btn btn-outline-secondary w-100">My Applications</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+        <h5 class="card-title">Profile Status</h5>
+        <div class="progress mb-3" style="height: 24px;">
+          <div class="progress-bar" role="progressbar" style="width: {{ progress_percent }}%;" aria-valuenow="{{ progress_percent }}" aria-valuemin="0" aria-valuemax="100">{{ progress_percent }}%</div>
+        </div>
+        <div class="row text-center">
+          <div class="col-6">
+            <p class="mb-1 text-muted">Step 1</p>
+            <span class="badge bg-{{ profile.has_step1|yesno:'success,secondary' }}">{{ profile.has_step1|yesno:'Complete,Pending' }}</span>
+          </div>
+          <div class="col-6">
+            <p class="mb-1 text-muted">Step 2</p>
+            <span class="badge bg-{{ profile.has_step2|yesno:'success,secondary' }}">{{ profile.has_step2|yesno:'Complete,Pending' }}</span>
+          </div>
+        </div>
+        <div class="row text-center mt-3">
+          <div class="col-6">
+            <p class="mb-1 text-muted">Step 3</p>
+            <span class="badge bg-{{ profile.has_step3|yesno:'success,secondary' }}">{{ profile.has_step3|yesno:'Complete,Pending' }}</span>
+          </div>
+          <div class="col-6">
+            <p class="mb-1 text-muted">Step 4</p>
+            <span class="badge bg-{{ profile.has_step4|yesno:'success,secondary' }}">{{ profile.has_step4|yesno:'Complete,Pending' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

@@ -10,58 +10,37 @@
       role="menu">
 
     <li class="nav-item">
-      <a href="#" class="nav-link">
+      <a href="{% url 'applicant:dashboard' %}" class="nav-link">
         <i class="nav-icon fas fa-tachometer-alt text-primary"></i>
         <p>Dashboard</p>
       </a>
     </li>
 
     <li class="nav-item">
-      <a href="#" class="nav-link">
-        <i class="nav-icon fas fa-user text-info"></i>
-        <p>Profile</p>
-      </a>
-    </li>
-
-    <li class="nav-item">
-      <a href="#" class="nav-link">
+      <a href="{% url 'applicant:apply_jobs' %}" class="nav-link">
         <i class="nav-icon fas fa-briefcase text-success"></i>
-        <p>Vacancies</p>
+        <p>Apply Jobs</p>
       </a>
     </li>
 
     <li class="nav-item">
-      <a href="#" class="nav-link">
+      <a href="{% url 'applicant:applications' %}" class="nav-link">
         <i class="nav-icon fas fa-file-alt text-warning"></i>
-        <p>Applications</p>
+        <p>My Applications</p>
       </a>
     </li>
 
     <li class="nav-item">
-      <a href="#" class="nav-link">
-        <i class="nav-icon fas fa-pencil-alt text-primary"></i>
-        <p>Examinations</p>
+      <a href="{% url 'applicant:edit_profile' %}" class="nav-link">
+        <i class="nav-icon fas fa-user text-info"></i>
+        <p>Edit Profile</p>
       </a>
     </li>
 
     <li class="nav-item">
-      <a href="#" class="nav-link">
-        <i class="nav-icon fas fa-video text-info"></i>
-        <p>Interviews</p>
-      </a>
-    </li>
-
-    <li class="nav-item">
-      <a href="#" class="nav-link">
-        <i class="nav-icon fas fa-check-circle text-success"></i>
-        <p>Results</p>
-      </a>
-    </li>
-
-    <li class="nav-item">
-      <a href="#" class="nav-link">
-        <i class="nav-icon fas fa-bell text-danger"></i>
-        <p>Notifications</p>
+      <a href="{% url 'applicant:change_password' %}" class="nav-link">
+        <i class="nav-icon fas fa-key text-danger"></i>
+        <p>Change Password</p>
       </a>
     </li>
 

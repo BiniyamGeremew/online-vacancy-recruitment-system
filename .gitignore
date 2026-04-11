@@ -13,3 +13,5 @@ __pycache__/
 *.idea/
 
 note.md
+
+/media/

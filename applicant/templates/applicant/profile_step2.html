@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Applicant Profile - Step 2{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+  <div class="col-12">
+    <h3>Profile completion: Step 2 of 4</h3>
+    <p class="text-muted">Upload your resume and Grade 8 certificate.</p>
+  </div>
+</div>
+
+<div class="card shadow-sm border-0">
+  <div class="card-header bg-info text-white">
+    <h3 class="card-title">Document Upload</h3>
+  </div>
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="row g-3">
+        <div class="col-md-6">{{ form.resume.label_tag }}{{ form.resume }}</div>
+        <div class="col-md-6">{{ form.grade_8_certificate.label_tag }}{{ form.grade_8_certificate }}</div>
+      </div>
+      <div class="mt-4 d-flex justify-content-between align-items-center">
+        <a href="{% url 'applicant:profile_step1' %}" class="btn btn-secondary">Back to Step 1</a>
+        <button type="submit" class="btn btn-primary">Save Documents</button>
+      </div>
+    </form>
+
+    <div class="row mt-4">
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">Resume</h5>
+            {% if resume %}
+              <p class="mb-2">Uploaded: {{ resume.file.name|slice:'18:' }}</p>
+              <a href="{{ resume.file.url }}" class="btn btn-sm btn-outline-primary" download>Download Resume</a>
+            {% else %}
+              <p class="text-muted">No resume uploaded yet.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">Grade 8 Certificate</h5>
+            {% if grade8 %}
+              <p class="mb-2">Uploaded: {{ grade8.file.name|slice:'18:' }}</p>
+              <a href="{{ grade8.file.url }}" class="btn btn-sm btn-outline-primary" download>Download Certificate</a>
+            {% else %}
+              <p class="text-muted">No Grade 8 certificate uploaded yet.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
