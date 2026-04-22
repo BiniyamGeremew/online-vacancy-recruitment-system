@@ -1,24 +1,26 @@
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import views as auth_views
-from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
-import pycountry
+from django.utils import timezone
 
+from hr_officer.models import Vacancy, VacancyPosition, JobApplication
+from hr_officer.constants import VacancyStatus
+
+from .models import (
+    ApplicantProfile,
+    EducationQualification,
+    EmploymentHistory,
+    ApplicantDocument,
+)
 from .forms import (
     ApplicantBasicInfoForm,
     ApplicantDocumentsForm,
     EducationQualificationForm,
     EmploymentHistoryForm,
 )
-from .models import (
-    ApplicantDocument,
-    ApplicantProfile,
-    EducationQualification,
-    EmploymentHistory,
-)
-
 
 def get_applicant_profile(user):
     profile, _ = ApplicantProfile.objects.get_or_create(user=user)
@@ -26,35 +28,109 @@ def get_applicant_profile(user):
 
 
 @login_required
+def vacancy_board_list(request):
+    vacancies = Vacancy.objects.filter(
+        status=VacancyStatus.PUBLISHED
+    ).order_by('-announcement_date')
+
+    return render(request, 'applicant/vacancy_board_list.html', {
+        'vacancies': vacancies
+    })
+
+
+@login_required
+def vacancy_board_detail(request, id):
+    vacancy = get_object_or_404(
+        Vacancy,
+        id=id,
+        status=VacancyStatus.PUBLISHED
+    )
+
+    positions = vacancy.positions.all()
+
+    applied_positions = JobApplication.objects.filter(
+        applicant=request.user,
+        vacancy_position__vacancy=vacancy
+    ).values_list('vacancy_position_id', flat=True)
+
+    today = timezone.now().date()
+
+    return render(request, 'applicant/vacancy_board_detail.html', {
+        'vacancy': vacancy,
+        'positions': positions,
+        'applied_positions': applied_positions,
+        'today': today,
+    })
+
+
+@login_required
+def apply(request, position_id):
+    user = request.user
+    profile = get_applicant_profile(user)
+
+    position = get_object_or_404(
+        VacancyPosition,
+        id=position_id,
+        vacancy__status=VacancyStatus.PUBLISHED
+    )
+
+    vacancy = position.vacancy
+
+    if vacancy.deadline and vacancy.deadline < timezone.now().date():
+        messages.warning(request, 'The application deadline has passed.')
+        return redirect('applicant:vacancy_board_detail', id=vacancy.id)
+
+    # duplicate check
+    if JobApplication.objects.filter(
+        applicant=user,
+        vacancy_position=position
+    ).exists():
+        messages.warning(request, 'You already applied for this position.')
+        return redirect('applicant:vacancy_board_detail', id=vacancy.id)
+
+    # profile check
+    if not profile.profile_is_complete():
+        messages.warning(request, 'Complete your profile first.')
+        return redirect('applicant:edit_profile')
+
+    education = EducationQualification.objects.filter(profile=profile)
+    employment = EmploymentHistory.objects.filter(profile=profile)
+    documents = ApplicantDocument.objects.filter(applicant=profile)
+
+    if request.method == 'POST':
+        JobApplication.objects.create(
+            applicant=user,
+            applicant_profile=profile,
+            vacancy_position=position,
+            status='submitted'
+        )
+
+        messages.success(request, 'Application submitted successfully!')
+        return redirect('applicant:vacancy_board_list')
+
+    return render(request, 'applicant/application_review.html', {
+        'profile': profile,
+        'user': user,
+        'education': education,
+        'employment': employment,
+        'documents': documents,
+        'position': position
+    })
+
+@login_required
 def dashboard(request):
     profile = get_applicant_profile(request.user)
-    qualifications_count = profile.qualifications.count()
-    employments_count = profile.employments.count()
-    documents_count = profile.documents.count()
-
-    completed_steps = 0
-    if profile.has_step1():
-        completed_steps += 1
-    if profile.has_step2():
-        completed_steps += 1
-    if profile.has_step3():
-        completed_steps += 1
-    if profile.has_step4():
-        completed_steps += 1
-
-    progress_percent = int((completed_steps / 4) * 100)
 
     return render(request, 'applicant/dashboard.html', {
         'profile': profile,
         'profile_complete': profile.profile_is_complete(),
-        'qualifications_count': qualifications_count,
-        'employments_count': employments_count,
-        'documents_count': documents_count,
-        'completed_steps': completed_steps,
-        'progress_percent': progress_percent,
+        'qualifications_count': profile.qualifications.count(),
+        'employments_count': profile.employments.count(),
+        'documents_count': profile.documents.count(),
     })
 
 
+# ===================== PROFILE STEPS =====================
 @login_required
 def profile_step1(request):
     profile = get_applicant_profile(request.user)
@@ -63,13 +139,9 @@ def profile_step1(request):
         form = ApplicantBasicInfoForm(request.POST, instance=profile, user=request.user)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Basic information saved successfully.')
             return redirect('applicant:profile_step2')
     else:
         form = ApplicantBasicInfoForm(instance=profile, user=request.user)
-
-    # Sort country choices alphabetically for better UX
-    form.fields['country'].choices = sorted(form.fields['country'].choices, key=lambda x: x[1])
 
     return render(request, 'applicant/profile_step1.html', {
         'form': form,
@@ -81,39 +153,29 @@ def profile_step1(request):
 @login_required
 def profile_step2(request):
     profile = get_applicant_profile(request.user)
-    resume = profile.documents.filter(document_type=ApplicantDocument.DOCUMENT_RESUME).first()
-    grade8 = profile.documents.filter(document_type=ApplicantDocument.DOCUMENT_GRADE_8).first()
 
-    if request.method == 'POST':
-        form = ApplicantDocumentsForm(request.POST, request.FILES)
-        if form.is_valid():
-            resume_file = form.cleaned_data.get('resume')
-            grade8_file = form.cleaned_data.get('grade_8_certificate')
+    form = ApplicantDocumentsForm(request.POST or None, request.FILES or None)
 
-            if resume_file:
-                ApplicantDocument.objects.update_or_create(
-                    applicant=profile,
-                    document_type=ApplicantDocument.DOCUMENT_RESUME,
-                    defaults={'file': resume_file}
-                )
+    if request.method == 'POST' and form.is_valid():
+        if form.cleaned_data.get('resume'):
+            ApplicantDocument.objects.update_or_create(
+                applicant=profile,
+                document_type=ApplicantDocument.DOCUMENT_RESUME,
+                defaults={'file': form.cleaned_data['resume']}
+            )
 
-            if grade8_file:
-                ApplicantDocument.objects.update_or_create(
-                    applicant=profile,
-                    document_type=ApplicantDocument.DOCUMENT_GRADE_8,
-                    defaults={'file': grade8_file}
-                )
+        if form.cleaned_data.get('grade_8_certificate'):
+            ApplicantDocument.objects.update_or_create(
+                applicant=profile,
+                document_type=ApplicantDocument.DOCUMENT_GRADE_8,
+                defaults={'file': form.cleaned_data['grade_8_certificate']}
+            )
 
-            messages.success(request, 'Documents saved successfully.')
-            return redirect('applicant:profile_step3')
-    else:
-        form = ApplicantDocumentsForm()
+        return redirect('applicant:profile_step3')
 
     return render(request, 'applicant/profile_step2.html', {
         'form': form,
         'profile': profile,
-        'resume': resume,
-        'grade8': grade8,
         'current_step': 2,
     })
 
@@ -121,15 +183,13 @@ def profile_step2(request):
 @login_required
 def profile_step3(request):
     profile = get_applicant_profile(request.user)
-    qualifications = profile.qualifications.all()
 
     if request.method == 'POST':
         form = EducationQualificationForm(request.POST, request.FILES)
         if form.is_valid():
-            qualification = form.save(commit=False)
-            qualification.profile = profile
-            qualification.save()
-            messages.success(request, 'Qualification added successfully.')
+            obj = form.save(commit=False)
+            obj.profile = profile
+            obj.save()
             return redirect('applicant:profile_step3')
     else:
         form = EducationQualificationForm()
@@ -137,7 +197,7 @@ def profile_step3(request):
     return render(request, 'applicant/profile_step3.html', {
         'form': form,
         'profile': profile,
-        'qualifications': qualifications,
+        'qualifications': profile.qualifications.all(),
         'current_step': 3,
     })
 
@@ -145,15 +205,13 @@ def profile_step3(request):
 @login_required
 def profile_step4(request):
     profile = get_applicant_profile(request.user)
-    employments = profile.employments.all()
 
     if request.method == 'POST':
         form = EmploymentHistoryForm(request.POST, request.FILES)
         if form.is_valid():
-            employment = form.save(commit=False)
-            employment.profile = profile
-            employment.save()
-            messages.success(request, 'Employment history added successfully.')
+            obj = form.save(commit=False)
+            obj.profile = profile
+            obj.save()
             return redirect('applicant:profile_step4')
     else:
         form = EmploymentHistoryForm()
@@ -161,29 +219,25 @@ def profile_step4(request):
     return render(request, 'applicant/profile_step4.html', {
         'form': form,
         'profile': profile,
-        'employments': employments,
+        'employments': profile.employments.all(),
         'current_step': 4,
     })
 
 
 @login_required
-def apply_jobs(request):
-    profile = get_applicant_profile(request.user)
-    if not profile.profile_is_complete():
-        messages.warning(request, 'Please complete your applicant profile before applying for jobs.')
-        return redirect('applicant:profile_step1')
+def vacancy_board_list(request):
+    vacancies = Vacancy.objects.filter(
+        status=VacancyStatus.PUBLISHED
+    ).order_by('-announcement_date')
 
-    return render(request, 'applicant/apply_jobs.html', {
-        'profile': profile,
+    return render(request, 'applicant/vacancy_board_list.html', {
+        'vacancies': vacancies
     })
 
 
 @login_required
 def applications(request):
     profile = get_applicant_profile(request.user)
-    if not profile.profile_is_complete():
-        messages.warning(request, 'Please complete your profile before reviewing applications.')
-        return redirect('applicant:profile_step1')
 
     return render(request, 'applicant/applications.html', {
         'profile': profile,
@@ -193,6 +247,7 @@ def applications(request):
 @login_required
 def edit_profile(request):
     profile = get_applicant_profile(request.user)
+
     return render(request, 'applicant/edit_profile.html', {
         'profile': profile,
     })
@@ -203,5 +258,5 @@ class ApplicantPasswordChangeView(LoginRequiredMixin, auth_views.PasswordChangeV
     success_url = reverse_lazy('applicant:dashboard')
 
     def form_valid(self, form):
-        messages.success(self.request, 'Your password was changed successfully.')
+        messages.success(self.request, 'Password changed successfully.')
         return super().form_valid(form)

@@ -6,18 +6,94 @@
 
 <div class="container-fluid">
 
-  <h2>{{ request_obj.subject }}</h2>
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
 
-  <p><strong>Department:</strong> {{ request_obj.department.name }}</p>
-  <p><strong>Description:</strong> {{ request_obj.description }}</p>
+      <h3 class="mb-3">
+        {{ request_obj.subject }}
+      </h3>
 
-  <hr>
+      <p class="mb-1">
+        <strong>Department:</strong> {{ request_obj.department.name }}
+      </p>
 
-  <h5>HR Actions</h5>
+      <p class="mb-1">
+        <strong>Date Submitted:</strong> {{ request_obj.date_submitted|date:"Y-m-d H:i" }}
+      </p>
 
-  <a href="{#}" class="btn btn-success mb-3">
-    Post Vacancy
-  </a>
+      <hr>
+
+      <!-- Narrative -->
+      <h5 class="mb-2">Request Narrative</h5>
+
+      <div class="border rounded p-3 bg-light">
+        {{ request_obj.request_narrative|linebreaks }}
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- Requested Positions -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+
+      <h5 class="mb-3">Requested Positions</h5>
+
+      <div class="table-responsive">
+        <table class="table table-bordered">
+
+          <thead>
+            <tr>
+              <th>Academic Rank</th>
+              <th>Specialization</th>
+              <th>CGPA Requirement</th>
+              <th>Number of Employees</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+            {% for item in request_obj.items.all %}
+            <tr>
+              <td>{{ item.academic_rank }}</td>
+              <td>{{ item.study_department }}</td>
+              <td>{{ item.cgpa_requirement }}</td>
+              <td>{{ item.number_of_employees }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4">No positions defined.</td>
+            </tr>
+            {% endfor %}
+
+          </tbody>
+
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- HR Actions -->
+  <div class="card shadow-sm">
+    <div class="card-body">
+
+      <h5 class="mb-3">HR Action</h5>
+
+      {% if request_obj.vacancy %}
+          <button class="btn btn-success" disabled>
+              Vacancy Already Posted
+          </button>
+      {% else %}
+          <a href="{% url 'hr_officer:create_vacancy' request_obj.id %}" class="btn btn-success">
+              Create Vacancy Announcement
+          </a>
+      {% endif %}
+
+    </div>
+  </div>
 
 </div>
 

@@ -54,9 +54,7 @@ class RequestDetailView(AcademicVPRequiredMixin, DetailView):
     context_object_name = 'request_obj'
 
     def get_queryset(self):
-        return EmployeeRequest.objects.filter(
-            status=RequestStatus.FORWARDED_TO_VP
-        )
+        return EmployeeRequest.objects.all()
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)

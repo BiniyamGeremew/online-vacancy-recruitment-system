@@ -11,48 +11,56 @@
       <h4 class="mb-0">Requests You Forwarded to HR</h4>
     </div>
 
-<div class="card-body">
+    <div class="card-body">
 
-  <div class="table-responsive">
-    <table class="table table-hover table-bordered align-middle">
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered align-middle">
 
-      <thead class="table-light">
-        <tr>
-          <th>Date</th>
-          <th>Subject</th>
-          <th>Department</th>
-          <th>Status</th>
-        </tr>
-      </thead>
+          <thead class="table-light">
+            <tr>
+              <th>Date</th>
+              <th>Subject</th>
+              <th>Department</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
 
-      <tbody>
+          <tbody>
 
-        {% for a in actions %}
-        <tr>
-          <td>{{ a.performed_at|date:"Y-m-d H:i" }}</td>
-          <td>{{ a.request.subject }}</td>
-          <td>{{ a.request.department.name }}</td>
-          <td>
-            <span class="badge bg-warning">
-              Forwarded to HR
-            </span>
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="4" class="text-center text-muted">
-            No forwarded requests.
-          </td>
-        </tr>
-        {% endfor %}
+            {% for a in actions %}
+            <tr>
+              <td>{{ a.performed_at|date:"Y-m-d H:i" }}</td>
+              <td>{{ a.request.subject }}</td>
+              <td>{{ a.request.department.name }}</td>
+              <td>
+                <span class="badge bg-warning">
+                  Forwarded to HR
+                </span>
+              </td>
 
-      </tbody>
+              <td>
+                <a href="{% url 'academic_vp:request_detail' a.request.pk %}"
+                   class="btn btn-sm btn-primary">
+                  Review
+                </a>
+              </td>
 
-    </table>
-  </div>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted">
+                No forwarded requests.
+              </td>
+            </tr>
+            {% endfor %}
 
-</div>
+          </tbody>
 
+        </table>
+      </div>
+
+    </div>
   </div>
 
 </div>

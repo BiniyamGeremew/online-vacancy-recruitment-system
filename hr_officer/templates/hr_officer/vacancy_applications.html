@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Applications for {{ vacancy.employee_request.subject }}{% endblock %}
+{% block content %}
+<div class="card card-info">
+  <div class="card-header">
+    <h3 class="card-title">Applications for: {{ vacancy.employee_request.subject }}</h3>
+  </div>
+  <div class="card-body">
+    <table class="table table-bordered table-hover">
+      <thead>
+        <tr>
+          <th>Applicant Name</th>
+          <th>Education</th>
+          <th>Experience</th>
+          <th>Applied Date</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for app in applications %}
+        <tr>
+          <td>{{ app.applicant.get_full_name|default:app.applicant.username }}</td>
+          <td>
+            {% for edu in app.applicant_profile.qualifications.all %}
+              {{ edu.qualification_type }} ({{ edu.institution_name }})<br>
+            {% empty %}N/A{% endfor %}
+          </td>
+          <td>
+            {% for emp in app.applicant_profile.employments.all %}
+              {{ emp.job_title }} ({{ emp.employer }})<br>
+            {% empty %}N/A{% endfor %}
+          </td>
+          <td>{{ app.applied_at|date:"Y-m-d H:i" }}</td>
+          <td>{{ app.get_status_display }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center">No applications found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

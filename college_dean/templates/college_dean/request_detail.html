@@ -3,7 +3,8 @@
 {% block title %}Request Review{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+
+<div class="container-fluid mt-4">
 
   <div class="d-flex justify-content-end mb-3">
     <a href="{% url 'college_dean:pending_requests' %}" class="btn btn-secondary btn-sm">
@@ -11,77 +12,93 @@
     </a>
   </div>
 
-  <!-- Request Info -->
+  <!-- REQUEST HEADER -->
   <div class="card mb-4">
     <div class="card-header">
       <h4 class="mb-0">{{ request_obj.subject }}</h4>
     </div>
     <div class="card-body">
       <p class="mb-2"><strong>Department:</strong> {{ request_obj.department.name }}</p>
-      <p class="mb-0">{{ request_obj.description }}</p>
+      <p class="mb-0">{{ request_obj.request_narrative }}</p>
     </div>
   </div>
 
-  <!-- Positions -->
+  <!-- POSITION NARRATIVE -->
   <div class="card mb-4">
     <div class="card-header">
-      <h5 class="mb-0">Positions</h5>
+      <h5 class="mb-0">Position Requirements</h5>
     </div>
-    <div class="card-body p-0">
-      <table class="table table-sm table-bordered mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>Qualification</th>
-            <th>Rank</th>
-            <th>Employees</th>
-            <th>Sex</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in request_obj.items.all %}
-          <tr>
-            <td>{{ item.academic_qualification }}</td>
-            <td>{{ item.academic_rank }}</td>
-            <td>{{ item.number_of_employees }}</td>
-            <td>{{ item.get_sex_display }}</td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="4" class="text-center">No positions</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+
+    <div class="card-body">
+
+      {% for item in request_obj.items.all %}
+      <div class="border rounded p-3 mb-3">
+
+        <h6 class="mb-3">Position {{ forloop.counter }}</h6>
+
+        <p class="mb-1">
+          <strong>Qualification:</strong> {{ item.academic_qualification }}
+        </p>
+
+        <p class="mb-1">
+          <strong>Rank:</strong> {{ item.academic_rank }}
+        </p>
+
+        <p class="mb-1">
+          <strong>Field of Study:</strong> {{ item.study_department }}
+        </p>
+
+        <p class="mb-1">
+          <strong>Experience:</strong> {{ item.experience_years }} years
+        </p>
+
+        <p class="mb-1">
+          <strong>CGPA Requirement:</strong> {{ item.cgpa_requirement }}
+        </p>
+
+        <p class="mb-0">
+          <strong>Number of Positions:</strong> {{ item.number_of_employees }}
+        </p>
+
+      </div>
+      {% empty %}
+        <p class="text-center mb-0">No positions found</p>
+      {% endfor %}
+
     </div>
   </div>
 
-  <!-- Actions -->
-  <div class="row mb-4">
+  <!-- ACTIONS -->
+  <div class="card p-3 mb-4">
+    <div class="row">
 
-    <!-- Reject -->
-    <div class="col-md-6">
-      <form method="post" action="{% url 'college_dean:reject_request' request_obj.pk %}">
-        {% csrf_token %}
-        <label class="form-label">Reject Reason</label>
-        <div class="mb-2">
-          {{ reject_form.reason }}
-        </div>
-        <button class="btn btn-danger btn-sm">Reject</button>
-      </form>
+      <!-- REJECT -->
+      <div class="col-md-6">
+        <form method="post" action="{% url 'college_dean:reject_request' request_obj.pk %}">
+          {% csrf_token %}
+          <label class="form-label">Reject Reason</label>
+          <div class="mb-2">
+            {{ reject_form.reason }}
+          </div>
+          <button class="btn btn-danger">Reject</button>
+        </form>
+      </div>
+
+      <!-- FORWARD -->
+      <div class="col-md-6">
+        <form method="post" action="{% url 'college_dean:forward_request' request_obj.pk %}">
+          {% csrf_token %}
+          <label class="form-label">Forward Comment</label>
+          <div class="mb-2">
+            {{ forward_form.reason }}
+          </div>
+          <button class="btn btn-warning">Forward to VP</button>
+        </form>
+      </div>
+
     </div>
-
-    <!-- Forward -->
-    <div class="col-md-6">
-      <form method="post" action="{% url 'college_dean:forward_request' request_obj.pk %}">
-        {% csrf_token %}
-        <label class="form-label">Forward Comment</label>
-        <div class="mb-2">
-          {{ forward_form.reason }}
-        </div>
-        <button class="btn btn-warning btn-sm">Forward to HR</button>
-      </form>
-    </div>
-
   </div>
+
 </div>
+
 {% endblock %}

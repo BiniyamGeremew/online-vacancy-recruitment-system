@@ -4,64 +4,64 @@
 
 {% block content %}
 
-<div class="container mt-4">
+<div class="container-fluid mt-4">
 
+  <!-- HEADER -->
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="fw-bold mb-0">Request Review</h4>
 
-<a href="{% url 'academic_vp:pending_requests' %}" class="btn btn-secondary btn-sm">
-  Back to Pending Requests
-</a>
-
+    <a href="{% url 'academic_vp:pending_requests' %}" class="btn btn-secondary btn-sm">
+      Back to Pending Requests
+    </a>
   </div>
-
-  <div class="card shadow-sm border-0">
-    <div class="card-body">
 
   <!-- REQUEST INFO -->
-  <div class="mb-4">
-    <h3 class="fw-bold">{{ request_obj.subject }}</h3>
-    <p class="text-muted mb-1">
-      <strong>Department:</strong> {{ request_obj.department.name }}
-    </p>
-    <p class="mb-0">{{ request_obj.description }}</p>
+  <div class="card mb-4">
+    <div class="card-body">
+
+      <h3 class="fw-bold mb-2">{{ request_obj.subject }}</h3>
+
+      <p class="mb-1">
+        <strong>Department:</strong> {{ request_obj.department.name }}
+      </p>
+
+      <p class="mb-0">
+        {{ request_obj.request_narrative }}
+      </p>
+
+    </div>
   </div>
 
-  <!-- POSITIONS -->
-  <div class="mb-4">
-    <h5 class="fw-semibold mb-3">Position Requirements</h5>
+  <!-- POSITION REQUIREMENTS -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0">Position Requirements</h5>
+    </div>
 
-    <table class="table table-bordered table-sm">
-      <thead class="table-light">
-        <tr>
-          <th>Qualification</th>
-          <th>Rank</th>
-          <th>Employees</th>
-          <th>Gender</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in request_obj.items.all %}
-        <tr>
-          <td>{{ item.academic_qualification }}</td>
-          <td>{{ item.academic_rank }}</td>
-          <td>{{ item.number_of_employees }}</td>
-          <td>{{ item.get_sex_display }}</td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="4" class="text-center text-muted">
-            No position requirements available.
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="card-body">
+
+      {% for item in request_obj.items.all %}
+      <div class="border rounded p-3 mb-3">
+
+        <h6 class="mb-3">Position {{ forloop.counter }}</h6>
+
+        <p class="mb-1"><strong>Qualification:</strong> {{ item.academic_qualification }}</p>
+        <p class="mb-1"><strong>Rank:</strong> {{ item.academic_rank }}</p>
+        <p class="mb-1"><strong>Field:</strong> {{ item.study_department }}</p>
+        <p class="mb-1"><strong>Experience:</strong> {{ item.experience_years }} years</p>
+        <p class="mb-1"><strong>CGPA:</strong> {{ item.cgpa_requirement }}</p>
+        <p class="mb-0"><strong>Positions:</strong> {{ item.number_of_employees }}</p>
+
+      </div>
+      {% empty %}
+        <p class="text-center text-muted mb-0">No position requirements available.</p>
+      {% endfor %}
+
+    </div>
   </div>
 
   <!-- ACTIONS -->
-  <div class="mb-3">
-    <h5 class="fw-semibold mb-3">Actions</h5>
+  <div class="card p-3">
 
     <div class="row g-4">
 
@@ -78,8 +78,8 @@
                 {{ reject_form.rejection_reason }}
               </div>
 
-              <button class="btn btn-danger btn-sm">
-                Reject Request
+              <button class="btn btn-danger">
+                Reject
               </button>
 
             </form>
@@ -101,7 +101,7 @@
                 {{ forward_form.comment }}
               </div>
 
-              <button class="btn btn-warning btn-sm">
+              <button class="btn btn-warning">
                 Forward to HR
               </button>
 
@@ -112,9 +112,6 @@
       </div>
 
     </div>
-  </div>
-
-</div>
 
   </div>
 
