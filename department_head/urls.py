@@ -12,4 +12,5 @@ urlpatterns = [
     path('requests/<int:pk>/delete/', views.DeleteEmployeeRequestView.as_view(), name='request_delete'),
     path('requests/approved/', views.ApprovedEmployeeRequestsView.as_view(), name='approved_requests'),
     path('requests/rejected/', views.RejectedEmployeeRequestsView.as_view(), name='rejected_requests'),
+    path('generate-request-draft/', views.generate_request_draft, name='generate_request_draft'),
 ]

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Vacancies{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+  <div class="card shadow-sm">
+
+    <div class="card-header">
+      <h3 class="mb-0">Vacancies</h3>
+    </div>
+
+    <div class="card-body">
+
+      <div class="row">
+
+        {% for vacancy in vacancies %}
+
+        <div class="col-md-6 mb-4">
+
+          <div class="card shadow-sm h-100">
+
+            <div class="card-body">
+
+              <h5 class="mb-2">
+                {{ vacancy.employee_request.subject }}
+              </h5>
+
+              <small class="text-muted">
+                {{ vacancy.employee_request.department.name }}
+              </small>
+
+              <hr>
+
+              <p>
+                <strong>Announcement Date:</strong><br>
+                {{ vacancy.announcement_date|default:"To be announced" }}
+              </p>
+
+              <p>
+                <strong>Deadline:</strong><br>
+                {{ vacancy.deadline|default:"To be announced" }}
+              </p>
+
+              <p>
+                <strong>Status:</strong>
+
+                {% if vacancy.status == "published" %}
+                  <span class="badge bg-success">Published</span>
+                {% elif vacancy.status == "closed" %}
+                  <span class="badge bg-danger">Closed</span>
+                {% else %}
+                  <span class="badge bg-secondary">Draft</span>
+                {% endif %}
+
+              </p>
+
+            </div>
+
+            <div class="card-footer text-end">
+
+              <a href="{% url 'applicant:vacancy_board_detail' vacancy.id %}"
+                 class="btn btn-primary btn-sm">
+                 View Vacancy
+              </a>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        {% empty %}
+
+        <div class="col-12 text-center text-muted">
+          No vacancies available.
+        </div>
+
+        {% endfor %}
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}

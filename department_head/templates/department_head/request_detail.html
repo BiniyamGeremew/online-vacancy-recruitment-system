@@ -5,45 +5,92 @@
 {% block content %}
 
 <div class="container-fluid">
-  <h3>{{ request_obj.department.name }} - {{ request_obj.subject }}</h3>
-  <p><strong>Status:</strong> {{ request_obj.status }}</p>
-  <p>{{ request_obj.description }}</p>
 
-  <h4>Positions</h4>
-  <table class="table">
-    <thead>
-      <tr>
-        <th>No</th>
-        <th>Qualification</th>
-        <th>Rank</th>
-        <th>Specialization</th>
-        <th>Sex</th>
-        <th>Experience</th>
-        <th>CGPA</th>
-        <th>Count</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for it in request_obj.items.all %}
-      <tr>
-        <td>{{ it.no }}</td>
-        <td>{{ it.academic_qualification }}</td>
-        <td>{{ it.academic_rank }}</td>
-        <td>{{ it.area_of_specialization }}</td>
-        <td>{{ it.get_sex_display }}</td>
-        <td>{{ it.experience_years }}</td>
-        <td>{{ it.cgpa_requirement }}</td>
-        <td>{{ it.number_of_employees }}</td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="8">No positions listed.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
 
-    <div class="mb-2">
-    <a href="{% url 'department_head:my_requests' %}" class="btn btn-secondary">Back to My Requests</a>
+      <h3 class="mb-3">
+        {{ request_obj.subject }}
+      </h3>
+
+      <p class="mb-1">
+        <strong>Department:</strong> {{ request_obj.department.name }}
+      </p>
+
+      <p class="mb-3">
+        <strong>Status:</strong> {{ request_obj.status }}
+      </p>
+
+      <hr>
+
+      <h5 class="mb-3">Request Narrative</h5>
+
+      <div class="p-3 bg-light rounded">
+        {{ request_obj.request_narrative|linebreaks }}
+      </div>
+
+    </div>
   </div>
+
+  {% if request_obj.items.all %}
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+
+      <h5 class="mb-3">Position Details</h5>
+
+      {% for it in request_obj.items.all %}
+      <div class="border rounded p-3 mb-3">
+
+        <div class="row">
+
+          <div class="col-md-4">
+            <strong>Academic Qualification</strong><br>
+            {{ it.academic_qualification }}
+          </div>
+
+          <div class="col-md-4">
+            <strong>Academic Rank</strong><br>
+            {{ it.academic_rank }}
+          </div>
+
+          <div class="col-md-4">
+            <strong>Field of Study</strong><br>
+            {{ it.study_department }}
+          </div>
+
+        </div>
+
+        <div class="row mt-3">
+
+          <div class="col-md-4">
+            <strong>Experience</strong><br>
+            {{ it.experience_years }} years
+          </div>
+
+          <div class="col-md-4">
+            <strong>Minimum CGPA</strong><br>
+            {{ it.cgpa_requirement }}
+          </div>
+
+          <div class="col-md-4">
+            <strong>Number of Positions</strong><br>
+            {{ it.number_of_employees }}
+          </div>
+
+        </div>
+
+      </div>
+      {% endfor %}
+
+    </div>
+  </div>
+
+  {% endif %}
+
+  <a href="{% url 'department_head:my_requests' %}" class="btn btn-secondary">
+    Back to My Requests
+  </a>
 
 </div>
 

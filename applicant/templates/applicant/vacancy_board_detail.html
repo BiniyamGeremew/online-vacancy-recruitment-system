@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Vacancy Announcement{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+
+<div class="card shadow-sm">
+
+<div class="card-header">
+<h3 class="mb-0">
+Vacancy Announcement
+</h3>
+</div>
+
+<div class="card-body">
+
+<!-- Header -->
+
+<h3 class="text-primary">
+{{ vacancy.employee_request.subject }}
+</h3>
+
+<p class="text-muted">
+{{ vacancy.employee_request.department.name }}
+</p>
+
+<p>
+<strong>Announcement Date:</strong>
+{{ vacancy.announcement_date|default:"To be announced" }}
+</p>
+
+<p>
+<strong>Application Deadline:</strong>
+{{ vacancy.deadline|default:"To be announced" }}
+</p>
+
+<hr>
+
+<!-- AI Generated Vacancy -->
+
+<div class="mb-4">
+
+{{ vacancy.announcement_text|linebreaks }}
+
+</div>
+
+<hr>
+
+<h4 class="mb-3">Available Positions</h4>
+
+<div class="row">
+
+{% for pos in positions %}
+
+<div class="col-md-6 mb-4">
+
+<div class="card shadow-sm">
+
+<div class="card-body">
+
+<h5 class="text-primary">
+{{ pos.department }}
+</h5>
+
+<p>
+<strong>Academic Rank:</strong>
+{{ pos.academic_rank }}
+</p>
+
+<p>
+<strong>Field of Education:</strong>
+{{ pos.field_of_education }}
+</p>
+
+<p>
+<strong>Minimum CGPA:</strong>
+{{ pos.minimum_cgpa }}
+</p>
+
+<p>
+<strong>Positions:</strong>
+{{ pos.positions }}
+</p>
+
+</div>
+
+<div class="card-footer text-end">
+
+<a href="{% url 'applicant:apply' pos.id %}" class="btn btn-success btn-sm">
+Apply Now
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+{% endblock %}

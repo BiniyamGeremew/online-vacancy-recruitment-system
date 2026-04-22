@@ -18,15 +18,18 @@ class EmployeeRequest(TimeStampedModel):
         on_delete=models.CASCADE,
         related_name='employee_requests',
     )
+
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='employee_requests_created',
     )
+
     date_submitted = models.DateTimeField(auto_now_add=True)
     subject = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
-    closing_note = models.TextField(blank=True)
+
+    request_narrative = models.TextField(blank=True)
+    ai_generated = models.BooleanField(default=False)
 
     status = models.CharField(
         max_length=50,
@@ -44,14 +47,27 @@ class EmployeeRequest(TimeStampedModel):
 
 
 class EmployeeRequestItem(TimeStampedModel):
-    SEX_MALE = 'M'
-    SEX_FEMALE = 'F'
-    SEX_ANY = 'A'
 
-    SEX_CHOICES = [
-        (SEX_MALE, 'Male'),
-        (SEX_FEMALE, 'Female'),
-        (SEX_ANY, 'Any'),
+    DEGREE = 'BSc'
+    MASTERS = 'MSc'
+    PHD = 'PhD'
+
+    QUALIFICATION_CHOICES = [
+        (DEGREE, 'Bachelor Degree'),
+        (MASTERS, 'Master’s Degree'),
+        (PHD, 'PhD'),
+    ]
+
+    LECTURER = 'LECTURER'
+    ASSISTANT_PROFESSOR = 'ASST_PROF'
+    ASSOCIATE_PROFESSOR = 'ASSOC_PROF'
+    PROFESSOR = 'PROFESSOR'
+
+    RANK_CHOICES = [
+        (LECTURER, 'Lecturer'),
+        (ASSISTANT_PROFESSOR, 'Assistant Professor'),
+        (ASSOCIATE_PROFESSOR, 'Associate Professor'),
+        (PROFESSOR, 'Professor'),
     ]
 
     request = models.ForeignKey(
@@ -59,14 +75,27 @@ class EmployeeRequestItem(TimeStampedModel):
         on_delete=models.CASCADE,
         related_name='items',
     )
+
     no = models.IntegerField(null=True, blank=True)
-    academic_qualification = models.CharField(max_length=255)
-    academic_rank = models.CharField(max_length=255)
-    area_of_specialization = models.CharField(max_length=255)
-    sex = models.CharField(max_length=1, choices=SEX_CHOICES, default=SEX_MALE)
-    experience_years = models.IntegerField()
-    cgpa_requirement = models.DecimalField(max_digits=4, decimal_places=2)
-    number_of_employees = models.IntegerField()
+
+    academic_qualification = models.CharField(
+        max_length=10,
+        choices=QUALIFICATION_CHOICES
+    )
+
+    academic_rank = models.CharField(
+        max_length=20,
+        choices=RANK_CHOICES
+    )
+
+    study_department = models.CharField(
+    max_length=255,
+    help_text="Department where the applicant completed their studies"
+)
+
+    experience_years = models.IntegerField(default=0)
+    cgpa_requirement = models.DecimalField(max_digits=4, decimal_places=2, default=0.00)
+    number_of_employees = models.IntegerField(default=1)
 
     class Meta:
         ordering = ['request', 'no']

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Vacancy Detail{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid" style="max-width:1100px;margin:auto;">
+
+  <!-- ================= HEADER ================= -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-body d-flex justify-content-between align-items-center">
+
+      <div>
+        <h3 class="mb-1">
+          {{ vacancy.employee_request.subject }}
+        </h3>
+
+        <small class="text-muted">
+          {{ vacancy.employee_request.department.name }} |
+          {{ vacancy.get_vacancy_type_display }} Vacancy
+        </small>
+      </div>
+
+      <div>
+
+        {% if vacancy.status == 'draft' %}
+          <a href="{% url 'hr_officer:publish_vacancy' vacancy.id %}"
+             class="btn btn-success btn-sm">
+             Publish
+          </a>
+
+        {% elif vacancy.status == 'published' %}
+          <a href="{% url 'hr_officer:close_vacancy' vacancy.id %}"
+             class="btn btn-danger btn-sm">
+             Close Vacancy
+          </a>
+        {% endif %}
+
+      </div>
+
+    </div>
+  </div>
+
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-header">
+      <strong>Vacancy Announcement (AI Generated)</strong>
+    </div>
+
+    <div class="card-body">
+      <pre style="white-space:pre-wrap;font-family:inherit;">
+{{ vacancy.announcement_text }}
+      </pre>
+    </div>
+  </div>
+  
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}

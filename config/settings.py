@@ -1,5 +1,11 @@
 from pathlib import Path
 from decouple import config
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 # Base directory
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -119,3 +125,4 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+

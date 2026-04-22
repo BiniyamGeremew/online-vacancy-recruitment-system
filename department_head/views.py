@@ -4,8 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView, DetailView, UpdateView
 from django.views import View
-from django.contrib import messages
-from django.http import HttpResponseForbidden
+from django.http import JsonResponse
 
 from .forms import (
     EmployeeRequestForm,
@@ -13,7 +12,12 @@ from .forms import (
     EmployeeRequestItemFormsetCreate,
 )
 from .models import EmployeeRequest
+from .services.ai_request_generator import generate_employee_request
 from organization.constants import RequestStatus
+import json
+from django.contrib import messages
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse, HttpResponseForbidden
 
 
 @login_required
@@ -79,6 +83,8 @@ class SubmitEmployeeRequestView(DepartmentHeadRequiredMixin, CreateView):
         instance.created_by = user
         instance.department = profile.department
         instance.status = RequestStatus.SUBMITTED
+        if instance.request_narrative:
+            instance.ai_generated = True
         instance.save()
 
         formset = EmployeeRequestItemFormsetCreate(self.request.POST, instance=instance)
@@ -147,10 +153,8 @@ class UpdateEmployeeRequestView(DepartmentHeadRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        if self.request.method == 'POST':
-            context['formset'] = EmployeeRequestItemFormset(
-                self.request.POST, instance=self.object
-            )
+        if self.request.POST:
+            context['formset'] = EmployeeRequestItemFormset(self.request.POST, instance=self.object)
         else:
             context['formset'] = EmployeeRequestItemFormset(instance=self.object)
 
@@ -164,7 +168,34 @@ class UpdateEmployeeRequestView(DepartmentHeadRequiredMixin, UpdateView):
 
         if formset.is_valid():
             formset.save()
-            messages.success(self.request, 'Request updated successfully.')
+
+            action = self.request.POST.get("action")
+
+            # 🔥 NEW: regenerate if requested
+            if action == "regenerate":
+                positions = []
+
+                for item in instance.items.all():
+                    positions.append({
+                        "academic_qualification": item.academic_qualification,
+                        "academic_rank": item.academic_rank,
+                        "study_department": item.study_department,
+                        "experience_years": item.experience_years,
+                        "cgpa_requirement": item.cgpa_requirement,
+                        "number_of_employees": item.number_of_employees,
+                    })
+
+                request_data = {
+                    "department": instance.department.name,
+                    "subject": instance.subject,
+                    "positions": positions,
+                }
+
+                instance.request_narrative = generate_employee_request(request_data)
+                instance.ai_generated = True
+                instance.save()
+
+            messages.success(self.request, "Request updated successfully.")
             return redirect(self.success_url)
 
         return self.form_invalid(form)
@@ -220,3 +251,43 @@ class RejectedEmployeeRequestsView(LoginRequiredMixin, ListView):
             department=profile.department,
             status=RequestStatus.REJECTED_BY_DEAN
         ).order_by('-date_submitted')
+
+
+@login_required
+@require_POST
+def generate_request_draft(request):
+
+    user = request.user
+    profile = getattr(user, 'userprofile', None)
+
+    if not profile or not profile.department:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    subject = data.get('subject', '')
+    positions_data = data.get('positions', [])
+
+    positions = []
+    for pos in positions_data:
+        positions.append({
+            'academic_qualification': pos.get('academic_qualification', ''),
+            'academic_rank': pos.get('academic_rank', ''),
+            'study_department': pos.get('study_department', ''),
+            'experience_years': pos.get('experience_years', 0),
+            'cgpa_requirement': pos.get('cgpa_requirement', ''),
+            'number_of_employees': pos.get('number_of_employees', 1),
+        })
+
+    request_data = {
+        'department': profile.department.name,
+        'subject': subject,
+        'positions': positions,
+    }
+
+    narrative = generate_employee_request(request_data)
+
+    return JsonResponse({'narrative': narrative})
