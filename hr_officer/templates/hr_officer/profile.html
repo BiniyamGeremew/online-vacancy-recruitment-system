@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="card-title">My Profile</h3>
+        <div>
+          <a href="{% url 'hr_officer:edit_profile' %}" class="btn btn-primary btn-sm" style="margin-right:10px;">Edit Profile</a>
+          <a href="{% url 'hr_officer:change_password' %}" class="btn btn-outline-secondary btn-sm">Change Password</a>
+        </div>
+      </div>
+
+      {% if profile %}
+      <dl class="row">
+        <dt class="col-sm-3">Name</dt>
+        <dd class="col-sm-9">{{ profile.user.first_name }} {{ profile.user.last_name }}</dd>
+
+        <dt class="col-sm-3">Email</dt>
+        <dd class="col-sm-9">{{ profile.user.email }}</dd>
+
+        <dt class="col-sm-3">Phone</dt>
+        <dd class="col-sm-9">{{ profile.phone_number|default:'Not provided' }}</dd>
+
+        <dt class="col-sm-3">Office</dt>
+        <dd class="col-sm-9">{{ profile.office_location|default:'Not provided' }}</dd>
+
+        <dt class="col-sm-3">About</dt>
+        <dd class="col-sm-9">{{ profile.bio|linebreaksbr|default:'No bio available.' }}</dd>
+      </dl>
+      {% else %}
+      <div class="alert alert-warning">No profile information is available.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

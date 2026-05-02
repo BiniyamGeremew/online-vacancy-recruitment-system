@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+
+{% block title %}Take Exam - {{ exam.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .exam-question { margin-bottom: 1.5rem; }
+  .exam-question textarea { width: 100%; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card card-primary">
+  <div class="card-header">
+    <h3 class="card-title">{{ exam.title }}</h3>
+  </div>
+  <div class="card-body">
+    <p><strong>Vacancy:</strong> {{ exam.vacancy.employee_request.subject }}</p>
+    <p><strong>Duration:</strong> {{ exam.duration_minutes }} minutes</p>
+    {% if show_started %}
+      <div class="alert alert-info">
+        Time remaining: <span id="timer">{{ remaining_seconds }}</span> seconds
+      </div>
+    {% endif %}
+
+    {% if not show_started %}
+      <div class="alert alert-warning">
+        <p>Your exam is ready. Click <strong>Start Exam</strong> to begin. Once started, your timer will begin and the exam will be monitored for security events.</p>
+      </div>
+      <button id="start-button" class="btn btn-success">Start Exam</button>
+    {% else %}
+      <form method="post" id="exam-form">
+        {% csrf_token %}
+        <input type="hidden" name="device_fingerprint" id="device_fingerprint" value="">
+        <input type="hidden" name="action" value="submit_exam">
+
+        {% for item in questions %}
+          {% with question=item.question choices=item.choices %}
+            <div class="exam-question card card-outline card-secondary">
+              <div class="card-header">
+                <h5 class="card-title">Question {{ forloop.counter }} ({{ question.marks }} marks)</h5>
+              </div>
+              <div class="card-body">
+                <p>{{ question.question_text }}</p>
+                {% if question.question_type == question.TYPE_MCQ %}
+                  {% for choice in choices %}
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="question_{{ question.id }}" id="choice_{{ choice.id }}" value="{{ choice.id }}">
+                      <label class="form-check-label" for="choice_{{ choice.id }}">{{ choice.option_text }}</label>
+                    </div>
+                  {% endfor %}
+                {% else %}
+                  <textarea class="form-control" name="question_{{ question.id }}" rows="4"></textarea>
+                {% endif %}
+              </div>
+            </div>
+          {% endwith %}
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary">Submit Exam</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const securityUrl = "{% url 'examinations:exam_security_event' session_id=session.id %}";
+  const startButton = document.getElementById('start-button');
+  const deviceFingerprintInput = document.getElementById('device_fingerprint');
+  const form = document.getElementById('exam-form');
+
+  function computeFingerprint() {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'unknown';
+    return [navigator.userAgent, screen.width + 'x' + screen.height, timezone].join('|');
+  }
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  function sendSecurityEvent(eventType) {
+    const fingerprint = computeFingerprint();
+    const data = new URLSearchParams();
+    data.append('event_type', eventType);
+    data.append('device_fingerprint', fingerprint);
+
+    return fetch(securityUrl, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': getCookie('csrftoken'),
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: data,
+    });
+  }
+
+  function sendReloadEvent() {
+    const fingerprint = computeFingerprint();
+    const data = new URLSearchParams();
+    data.append('event_type', 'reload_attempt');
+    data.append('device_fingerprint', fingerprint);
+
+    if (navigator.sendBeacon) {
+      const blob = new Blob([data.toString()], { type: 'application/x-www-form-urlencoded' });
+      navigator.sendBeacon(securityUrl, blob);
+    } else {
+      fetch(securityUrl, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken'),
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: data,
+        keepalive: true,
+      });
+    }
+  }
+
+  function disableActions(event) {
+    if (['contextmenu', 'copy', 'paste', 'cut', 'selectstart'].includes(event.type)) {
+      event.preventDefault();
+    }
+  }
+
+  function disableKeyShortcuts(event) {
+    if (event.key === 'F12' || (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'i')) {
+      event.preventDefault();
+    }
+  }
+
+  if (startButton) {
+    startButton.addEventListener('click', function () {
+      sendSecurityEvent('start').then(response => {
+        if (response.ok) {
+          window.location.reload();
+        } else {
+          response.json().then(data => {
+            alert(data.error || 'Unable to start exam.');
+          });
+        }
+      });
+    });
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+      sendSecurityEvent('tab_switch');
+    }
+  });
+
+  ['contextmenu', 'copy', 'paste', 'cut', 'selectstart'].forEach(evt => {
+    document.addEventListener(evt, disableActions);
+  });
+  document.addEventListener('keydown', disableKeyShortcuts);
+
+  if (form) {
+    form.addEventListener('submit', function () {
+      deviceFingerprintInput.value = computeFingerprint();
+    });
+  }
+
+  const timerEl = document.getElementById('timer');
+  if (timerEl) {
+    let remaining = parseInt(timerEl.textContent, 10);
+    const interval = setInterval(() => {
+      if (remaining > 0) {
+        remaining -= 1;
+        timerEl.textContent = remaining;
+      }
+      if (remaining <= 0) {
+        clearInterval(interval);
+        if (form) {
+          alert('Time is up. Your exam will be submitted automatically.');
+          if (deviceFingerprintInput) {
+            deviceFingerprintInput.value = computeFingerprint();
+          }
+          form.submit();
+        }
+      }
+    }, 1000);
+  }
+
+  window.addEventListener('beforeunload', function (event) {
+    if (timerEl) {
+      sendReloadEvent();
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  });
+</script>
+{% endblock %}

@@ -21,6 +21,11 @@
       </div>
 
       <div>
+        {% if vacancy.status == 'published' %}
+          <span style="display:inline-block; padding:6px 12px; background:#198754; color:#fff; border-radius:6px; font-weight:600; margin-right:12px;">Published</span>
+        {% elif vacancy.status == 'closed' %}
+          <span style="display:inline-block; padding:6px 12px; background:#dc3545; color:#fff; border-radius:6px; font-weight:600; margin-right:12px;">Closed</span>
+        {% endif %}
 
         {% if vacancy.status == 'draft' %}
           <a href="{% url 'hr_officer:publish_vacancy' vacancy.id %}"
@@ -29,10 +34,26 @@
           </a>
 
         {% elif vacancy.status == 'published' %}
-          <a href="{% url 'hr_officer:close_vacancy' vacancy.id %}"
+          <button id="close-vacancy-button" type="button"
              class="btn btn-danger btn-sm">
              Close Vacancy
+          </button>
+          <a href="{% url 'hr_officer:vacancy_applications' vacancy.id %}"
+             class="btn btn-primary btn-sm" style="margin-left:10px;">
+             View Applications
           </a>
+          <a href="{% url 'hr_officer:vacancy_screening' vacancy.id %}"
+             class="btn btn-info btn-sm" style="margin-left:10px;">
+             Screen Candidates
+          </a>
+          <a href="{% url 'hr_officer:vacancy_shortlist' vacancy.id %}"
+             class="btn btn-success btn-sm" style="margin-left:10px;">
+             Shortlisted Candidates
+          </a>
+
+        {% elif vacancy.status == 'closed' %}
+          <span style="display:inline-block; padding:8px 14px; background:#dc3545; color:#fff; border-radius:6px; font-weight:600;">Closed</span>
+          <span style="margin-left:15px; color:#6c757d;">This vacancy has been closed.</span>
         {% endif %}
 
       </div>
@@ -43,7 +64,7 @@
 
   <div class="card shadow-sm mb-3">
     <div class="card-header">
-      <strong>Vacancy Announcement (AI Generated)</strong>
+      <strong>Vacancy Announcement</strong>
     </div>
 
     <div class="card-body">
@@ -52,10 +73,51 @@
       </pre>
     </div>
   </div>
-  
-    </div>
 
+  <div id="close-vacancy-modal" style="display:none; position:fixed; inset:0; z-index:1200; background:rgba(0,0,0,0.55); align-items:center; justify-content:center;">
+    <div style="background:#fff; width:100%; max-width:560px; border-radius:12px; padding:24px; box-shadow:0 0 30px rgba(0,0,0,0.25);">
+      <h4 style="margin-top:0; margin-bottom:18px; font-weight:700;">Confirm Vacancy Closure</h4>
+      <p style="margin-bottom:20px; color:#6c757d;">Provide an internal reason for closing this vacancy. This reason is not shown to applicants.</p>
+
+      <form method="post" action="{% url 'hr_officer:close_vacancy' vacancy.id %}">
+        {% csrf_token %}
+
+        <div style="margin-bottom:18px;">
+          <label for="close-reason" style="display:block; font-weight:600; margin-bottom:8px;">Reason for closing (internal only)</label>
+          <textarea id="close-reason" name="reason" rows="5" style="width:100%; padding:12px; border:1px solid #ced4da; border-radius:6px; font-family:inherit;"></textarea>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end;">
+          <button type="button" id="close-vacancy-cancel" style="background:#6c757d; color:#fff; border:none; padding:10px 18px; border-radius:6px; cursor:pointer; margin-right:10px;">Cancel</button>
+          <button type="submit" style="background:#dc3545; color:#fff; border:none; padding:10px 18px; border-radius:6px; cursor:pointer;">Confirm Close</button>
+        </div>
+      </form>
+    </div>
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var openButton = document.getElementById('close-vacancy-button');
+      var modal = document.getElementById('close-vacancy-modal');
+      var cancel = document.getElementById('close-vacancy-cancel');
+
+      if (openButton && modal && cancel) {
+        openButton.addEventListener('click', function() {
+          modal.style.display = 'flex';
+        });
+
+        cancel.addEventListener('click', function() {
+          modal.style.display = 'none';
+        });
+
+        modal.addEventListener('click', function(event) {
+          if (event.target === modal) {
+            modal.style.display = 'none';
+          }
+        });
+      }
+    });
+  </script>
 
 </div>
 

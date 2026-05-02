@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Screen Candidates{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid" style="max-width:1200px;margin:auto;">
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-header">
+      <div>
+        <h4 class="mb-0">Screen Candidates for {{ vacancy.employee_request.subject }}</h4>
+        <small class="text-muted">Vacancy-specific screening with auto-screening and HR override.</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      {% if page_obj and page_obj.object_list %}
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Applicant</th>
+            <th>CGPA</th>
+            <th>Field of Study</th>
+            <th>Score</th>
+            <th>Status</th>
+            <th>Applied</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for app in page_obj %}
+          <tr>
+            <td>{{ app.applicant.user.get_full_name }}</td>
+            <td>{{ app.profile_snapshot.education.0.grade|default:'N/A' }}</td>
+            <td>{{ app.profile_snapshot.education.0.qualification_type|default:'N/A' }}</td>
+            <td>{{ app.ranking_score|default_if_none:"0.00" }}</td>
+            <td>
+              <span class="badge 
+                {% if app.status == 'submitted' %}bg-primary
+                {% elif app.status == 'eligible' %}bg-info
+                {% elif app.status == 'shortlisted' %}bg-success
+                {% elif app.status == 'rejected' %}bg-danger
+                {% elif app.status == 'interview' %}bg-warning
+                {% elif app.status == 'final_selection' %}bg-success
+                {% else %}bg-secondary
+                {% endif %}">
+                {{ app.get_status_display }}
+              </span>
+            </td>
+            <td>{{ app.submitted_at|date:'M d, Y' }}</td>
+            <td>
+              <div class="d-flex gap-1 flex-wrap">
+                <a href="{% url 'hr_officer:application_detail' app.id %}" class="btn btn-sm btn-outline-primary">View</a>
+
+
+            <form method="post" class="d-inline">
+              {% csrf_token %}
+              <input type="hidden" name="application_id" value="{{ app.id }}">
+              <input type="hidden" name="action" value="reject">
+              <button type="submit" class="btn btn-sm btn-danger">Reject</button>
+            </form>
+
+            <form method="post" class="d-inline">
+              {% csrf_token %}
+              <input type="hidden" name="application_id" value="{{ app.id }}">
+              <input type="hidden" name="action" value="shortlist">
+              <button type="submit" class="btn btn-sm btn-success" {% if not can_shortlist %}disabled title="Shortlisting is allowed only after the vacancy deadline has passed or after the shortlist is finalized."{% endif %}>Shortlist</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% include 'components/pagination.html' %}
+  {% else %}
+  <p class="text-center text-muted">No screening applications found for this vacancy.</p>
+  {% endif %}
+</div>
+
+
+  </div>
+
+</div>
+{% endblock %}

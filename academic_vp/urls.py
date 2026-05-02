@@ -13,5 +13,7 @@ urlpatterns = [
     path('request/<int:pk>/reject/', views.RejectRequestView.as_view(), name='reject_request'),
     path('request/<int:pk>/forward/', views.ForwardRequestView.as_view(), name='forward_request'),
     path('profile/', views.ProfileView.as_view(), name='profile'),
+    path('profile/edit/', views.AcademicVPProfileUpdateView.as_view(), name='edit_profile'),
+    path('profile/change-password/', views.AcademicVPPasswordChangeView.as_view(), name='change_password'),
     path('notifications/', views.NotificationsView.as_view(), name='notifications'),
 ]

@@ -2,13 +2,18 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth import views as auth_views
+from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView
+from django.views import View
+
+from core.utils.pagination import PaginationMixin
 
 from .models import DeanProfile, DeanAction
 from department_head.models import EmployeeRequest
 from organization.constants import RequestStatus
 
-from .forms import RejectForm, ForwardForm
+from .forms import RejectForm, ForwardForm, CollegeDeanUserForm
 
 
 class CollegeDeanRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -50,10 +55,11 @@ def dashboard(request):
     })
 
 
-class PendingRequestsView(CollegeDeanRequiredMixin, ListView):
+class PendingRequestsView(CollegeDeanRequiredMixin, PaginationMixin, ListView):
     model = EmployeeRequest
     template_name = 'college_dean/pending_requests.html'
     context_object_name = 'requests'
+    paginate_by = 10
 
     def get_queryset(self):
         profile = getattr(self.request.user, 'deanprofile', None)
@@ -85,6 +91,9 @@ class RequestDetailView(CollegeDeanRequiredMixin, DetailView):
         ctx['reject_form'] = RejectForm()
         ctx['forward_form'] = ForwardForm()
         ctx['actions'] = self.object.dean_actions.all()
+        ctx['STATUS_SUBMITTED'] = RequestStatus.SUBMITTED
+        ctx['STATUS_REJECTED_BY_DEAN'] = RequestStatus.REJECTED_BY_DEAN
+        ctx['STATUS_FORWARDED_TO_VP'] = RequestStatus.FORWARDED_TO_VP
         return ctx
 
 
@@ -121,6 +130,10 @@ def reject_request(request, pk):
         messages.error(request, 'Permission denied.')
         return redirect('college_dean:pending_requests')
 
+    if req.status != RequestStatus.SUBMITTED:
+        messages.error(request, 'This request has already been processed at this stage.')
+        return redirect('college_dean:request_detail', pk=pk)
+
     if request.method == 'POST':
         form = RejectForm(request.POST)
         if form.is_valid():
@@ -144,6 +157,10 @@ def forward_request(request, pk):
         messages.error(request, 'Permission denied.')
         return redirect('college_dean:pending_requests')
 
+    if req.status != RequestStatus.SUBMITTED:
+        messages.error(request, 'This request has already been processed at this stage.')
+        return redirect('college_dean:request_detail', pk=pk)
+
     if request.method == 'POST':
         form = ForwardForm(request.POST)
         if form.is_valid():
@@ -159,10 +176,11 @@ def forward_request(request, pk):
     return redirect('college_dean:request_detail', pk=pk)
 
 
-class SentRequestsView(CollegeDeanRequiredMixin, ListView):
+class SentRequestsView(CollegeDeanRequiredMixin, PaginationMixin, ListView):
     model = DeanAction
     template_name = 'college_dean/sent_requests.html'
     context_object_name = 'actions'
+    paginate_by = 10
 
     def get_queryset(self):
         return DeanAction.objects.filter(
@@ -170,10 +188,11 @@ class SentRequestsView(CollegeDeanRequiredMixin, ListView):
         ).order_by('-performed_at')
 
 
-class RejectedRequestsView(CollegeDeanRequiredMixin, ListView):
+class RejectedRequestsView(CollegeDeanRequiredMixin, PaginationMixin, ListView):
     model = EmployeeRequest
     template_name = 'college_dean/rejected_requests.html'
     context_object_name = 'requests'
+    paginate_by = 10
 
     def get_queryset(self):
         profile = getattr(self.request.user, 'deanprofile', None)
@@ -202,7 +221,37 @@ def notifications(request):
 
 @login_required
 def profile(request):
-    profile = getattr(request.user, 'deanprofile', None)
     return render(request, 'college_dean/profile.html', {
-        'profile': profile
+        'user': request.user
     })
+
+
+class CollegeDeanProfileUpdateView(LoginRequiredMixin, View):
+    template_name = 'college_dean/profile_edit.html'
+
+    def get(self, request, *args, **kwargs):
+        user_form = CollegeDeanUserForm(instance=request.user)
+        return render(request, self.template_name, {
+            'user_form': user_form,
+        })
+
+    def post(self, request, *args, **kwargs):
+        user_form = CollegeDeanUserForm(request.POST, instance=request.user)
+
+        if user_form.is_valid():
+            user_form.save()
+            messages.success(request, 'Profile updated successfully.')
+            return redirect('college_dean:profile')
+
+        return render(request, self.template_name, {
+            'user_form': user_form,
+        })
+
+
+class CollegeDeanPasswordChangeView(LoginRequiredMixin, auth_views.PasswordChangeView):
+    template_name = 'college_dean/change_password.html'
+    success_url = reverse_lazy('college_dean:profile')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Password changed successfully.')
+        return super().form_valid(form)

@@ -1,6 +1,8 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+
+from core.utils.pagination import paginate_queryset
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import views as auth_views
 from django.urls import reverse_lazy
@@ -28,22 +30,11 @@ def get_applicant_profile(user):
 
 
 @login_required
-def vacancy_board_list(request):
-    vacancies = Vacancy.objects.filter(
-        status=VacancyStatus.PUBLISHED
-    ).order_by('-announcement_date')
-
-    return render(request, 'applicant/vacancy_board_list.html', {
-        'vacancies': vacancies
-    })
-
-
-@login_required
 def vacancy_board_detail(request, id):
     vacancy = get_object_or_404(
         Vacancy,
         id=id,
-        status=VacancyStatus.PUBLISHED
+        status__in=[VacancyStatus.PUBLISHED, VacancyStatus.CLOSED]
     )
 
     positions = vacancy.positions.all()
@@ -173,9 +164,22 @@ def profile_step2(request):
 
         return redirect('applicant:profile_step3')
 
+    # 🔹 fetch uploaded documents
+    resume = ApplicantDocument.objects.filter(
+        applicant=profile,
+        document_type=ApplicantDocument.DOCUMENT_RESUME
+    ).first()
+
+    grade8 = ApplicantDocument.objects.filter(
+        applicant=profile,
+        document_type=ApplicantDocument.DOCUMENT_GRADE_8
+    ).first()
+
     return render(request, 'applicant/profile_step2.html', {
         'form': form,
         'profile': profile,
+        'resume': resume,
+        'grade8': grade8,
         'current_step': 2,
     })
 
@@ -184,20 +188,49 @@ def profile_step2(request):
 def profile_step3(request):
     profile = get_applicant_profile(request.user)
 
+    edit_id = request.GET.get("edit_id")
+    instance = None
+
+    # EDIT MODE
+    if edit_id:
+        instance = get_object_or_404(
+            EducationQualification,
+            id=edit_id,
+            profile=profile
+        )
+
     if request.method == 'POST':
-        form = EducationQualificationForm(request.POST, request.FILES)
+        qualification_id = request.POST.get("qualification_id")
+
+        if qualification_id:
+            instance = get_object_or_404(
+                EducationQualification,
+                id=qualification_id,
+                profile=profile
+            )
+
+        form = EducationQualificationForm(
+            request.POST,
+            request.FILES,
+            instance=instance
+        )
+
         if form.is_valid():
             obj = form.save(commit=False)
             obj.profile = profile
             obj.save()
+
             return redirect('applicant:profile_step3')
+
     else:
-        form = EducationQualificationForm()
+        form = EducationQualificationForm(instance=instance)
 
     return render(request, 'applicant/profile_step3.html', {
         'form': form,
         'profile': profile,
         'qualifications': profile.qualifications.all(),
+        'edit_mode': instance is not None,
+        'edit_instance': instance,
         'current_step': 3,
     })
 
@@ -227,11 +260,15 @@ def profile_step4(request):
 @login_required
 def vacancy_board_list(request):
     vacancies = Vacancy.objects.filter(
-        status=VacancyStatus.PUBLISHED
+        status__in=[VacancyStatus.PUBLISHED, VacancyStatus.CLOSED]
     ).order_by('-announcement_date')
+    pagination = paginate_queryset(request, vacancies, per_page=10)
 
     return render(request, 'applicant/vacancy_board_list.html', {
-        'vacancies': vacancies
+        'vacancies': pagination['page_obj'],
+        'page_obj': pagination['page_obj'],
+        'paginator': pagination['paginator'],
+        'pagination_query': pagination['pagination_query'],
     })
 
 

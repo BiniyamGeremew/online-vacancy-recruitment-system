@@ -1,19 +1,32 @@
 {% extends "base.html" %}
 
-{% block title %}Dean Profile{% endblock %}
+{% block title %}My Profile{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
-  <div class="card">
+  <div class="card shadow-sm">
     <div class="card-body">
-      {% if profile %}
-        <h3>{{ profile.user.get_full_name }}</h3>
-        <p><strong>College:</strong> {{ profile.college.name }}</p>
-        <p><strong>Phone:</strong> {{ profile.phone }}</p>
-        <p>{{ profile.bio }}</p>
-      {% else %}
-        <p>No profile found.</p>
-      {% endif %}
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="card-title">My Profile</h3>
+        <div>
+          <a href="{% url 'college_dean:edit_profile' %}" class="btn btn-primary btn-sm">Edit Profile</a>
+          <a href="{% url 'college_dean:change_password' %}" class="btn btn-outline-secondary btn-sm">Change Password</a>
+        </div>
+      </div>
+
+      <dl class="row">
+        <dt class="col-sm-3">Name</dt>
+        <dd class="col-sm-9">{{ user.first_name }} {{ user.last_name }}</dd>
+
+        <dt class="col-sm-3">Email</dt>
+        <dd class="col-sm-9">{{ user.email }}</dd>
+
+        <dt class="col-sm-3">Username</dt>
+        <dd class="col-sm-9">{{ user.username }}</dd>
+
+        <dt class="col-sm-3">Role</dt>
+        <dd class="col-sm-9">College Dean</dd>
+      </dl>
     </div>
   </div>
 </div>

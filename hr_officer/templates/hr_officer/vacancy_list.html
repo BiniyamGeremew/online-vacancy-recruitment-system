@@ -30,7 +30,6 @@
             {% if vacancy.status == 'draft' %}
               <a href="{% url 'hr_officer:publish_vacancy' vacancy.id %}" class="btn btn-success btn-sm">Publish</a>
             {% elif vacancy.status == 'published' %}
-              <a href="{% url 'hr_officer:close_vacancy' vacancy.id %}" class="btn btn-danger btn-sm">Close</a>
             {% endif %}
           </td>
         </tr>
@@ -39,6 +38,9 @@
         {% endfor %}
       </tbody>
     </table>
+  </div>
+  <div class="card-footer">
+    {% include 'components/pagination.html' %}
   </div>
 </div>
 {% endblock %}

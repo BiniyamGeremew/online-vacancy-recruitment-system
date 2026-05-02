@@ -2,7 +2,6 @@ from django.urls import path
 
 from .views import (
     ApplicantPasswordChangeView,
-    applications,
     dashboard,
     edit_profile,
     profile_step1,
@@ -13,6 +12,7 @@ from .views import (
     vacancy_board_list,
     apply
 )
+from examinations.views import take_exam, exam_result
 
 app_name = 'applicant'
 
@@ -28,9 +28,10 @@ urlpatterns = [
     path('vacancies/', vacancy_board_list, name='vacancy_board_list'),
     path('vacancies/<int:id>/', vacancy_board_detail, name='vacancy_board_detail'),
 
-    path('applications/', applications, name='applications'),
     path('edit-profile/', edit_profile, name='edit_profile'),
     path('change-password/', ApplicantPasswordChangeView.as_view(), name='change_password'),
 
     path('apply/<int:position_id>/', apply, name='apply'),
+    path('exam/<int:session_id>/', take_exam, name='take_exam'),
+    path('exam/<int:session_id>/result/', exam_result, name='exam_result'),
 ]

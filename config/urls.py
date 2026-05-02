@@ -12,6 +12,9 @@ urlpatterns = [
     path('department_head/', include('department_head.urls', namespace='department_head')),
     path('college_dean/', include('college_dean.urls', namespace='college_dean')),
     path('academic_vp/', include('academic_vp.urls', namespace='academic_vp')),
+    path('applications/', include('applications.urls', namespace='applications')),
+    path('examinations/', include('examinations.urls', namespace='examinations')),
+    path('notifications/', include('notifications.urls', namespace='notifications')),
     path('', RedirectView.as_view(url='/accounts/login/')),
     
 

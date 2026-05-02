@@ -114,8 +114,9 @@ class Vacancy(models.Model):
 
     application_instructions = models.TextField(blank=True)
 
-    announcement_date = models.DateField(null=True, blank=True)
-    deadline = models.DateField(null=True, blank=True)
+    announcement_date = models.DateField(default=timezone.now)
+    deadline = models.DateField()
+    shortlist_finalized = models.BooleanField(default=False)
 
     posted_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -129,6 +130,16 @@ class Vacancy(models.Model):
         choices=STATUS_CHOICES,
         default=STATUS_DRAFT
     )
+
+    closed_reason = models.TextField(blank=True, null=True)
+    closed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='closed_vacancies'
+    )
+    closed_at = models.DateTimeField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

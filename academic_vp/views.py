@@ -1,10 +1,19 @@
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import TemplateView, ListView, DetailView, View
 from django.contrib import messages
+from django.contrib.auth import views as auth_views
+from django.urls import reverse_lazy
 
 from .mixins import AcademicVPRequiredMixin
-from .forms import ApproveRequestForm, RejectRequestForm, ForwardRequestForm
-from .models import VPAction
+from core.utils.pagination import PaginationMixin
+from .forms import (
+    ApproveRequestForm,
+    RejectRequestForm,
+    ForwardRequestForm,
+    AcademicVPUserForm,
+    AcademicVPProfileForm,
+)
+from .models import VPAction, VPProfile
 
 from department_head.models import EmployeeRequest
 from organization.constants import RequestStatus
@@ -37,7 +46,7 @@ class DashboardView(AcademicVPRequiredMixin, TemplateView):
 
         return ctx
 
-class PendingRequestsView(AcademicVPRequiredMixin, ListView):
+class PendingRequestsView(AcademicVPRequiredMixin, PaginationMixin, ListView):
     model = EmployeeRequest
     template_name = 'academic_vp/pending_requests.html'
     context_object_name = 'requests'
@@ -62,6 +71,10 @@ class RequestDetailView(AcademicVPRequiredMixin, DetailView):
         ctx['reject_form'] = RejectRequestForm()
         ctx['forward_form'] = ForwardRequestForm()
         ctx['actions'] = self.object.vp_actions.all()
+        ctx['STATUS_FORWARDED_TO_VP'] = RequestStatus.FORWARDED_TO_VP
+        ctx['STATUS_APPROVED_BY_VP'] = RequestStatus.APPROVED_BY_VP
+        ctx['STATUS_REJECTED_BY_VP'] = RequestStatus.REJECTED_BY_VP
+        ctx['STATUS_FORWARDED_TO_HR'] = RequestStatus.FORWARDED_TO_HR
         return ctx
 
 class ApproveRequestView(AcademicVPRequiredMixin, View):
@@ -145,10 +158,11 @@ class ForwardRequestView(AcademicVPRequiredMixin, View):
         messages.error(request, 'Invalid forward submission.')
         return redirect('academic_vp:request_detail', pk=pk)
 
-class SentRequestsView(AcademicVPRequiredMixin, ListView):
+class SentRequestsView(AcademicVPRequiredMixin, PaginationMixin, ListView):
     model = VPAction
     template_name = 'academic_vp/sent_requests.html'
     context_object_name = 'actions'
+    paginate_by = 10
 
     def get_queryset(self):
         return VPAction.objects.filter(
@@ -156,10 +170,11 @@ class SentRequestsView(AcademicVPRequiredMixin, ListView):
             action=VPAction.ACTION_FORWARDED
         ).order_by('-performed_at')
 
-class RejectedRequestsView(AcademicVPRequiredMixin, ListView):
+class RejectedRequestsView(AcademicVPRequiredMixin, PaginationMixin, ListView):
     model = EmployeeRequest
     template_name = 'academic_vp/rejected_requests.html'
     context_object_name = 'requests'
+    paginate_by = 10
 
     def get_queryset(self):
         return EmployeeRequest.objects.filter(
@@ -173,6 +188,46 @@ class ProfileView(AcademicVPRequiredMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         ctx['profile'] = self.get_vp_profile()
         return ctx
+
+class AcademicVPProfileUpdateView(AcademicVPRequiredMixin, View):
+    template_name = 'academic_vp/profile_edit.html'
+
+    def get(self, request, *args, **kwargs):
+        profile = getattr(request.user, 'vpprofile', None)
+        user_form = AcademicVPUserForm(instance=request.user)
+        profile_form = AcademicVPProfileForm(instance=profile)
+        return render(request, self.template_name, {
+            'user_form': user_form,
+            'profile_form': profile_form,
+        })
+
+    def post(self, request, *args, **kwargs):
+        profile = getattr(request.user, 'vpprofile', None)
+        user_form = AcademicVPUserForm(request.POST, instance=request.user)
+        profile_form = AcademicVPProfileForm(request.POST, instance=profile)
+
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile = profile_form.save(commit=False)
+            profile.user = request.user
+            profile.save()
+            messages.success(request, 'Profile updated successfully.')
+            return redirect('academic_vp:profile')
+
+        return render(request, self.template_name, {
+            'user_form': user_form,
+            'profile_form': profile_form,
+        })
+
+
+class AcademicVPPasswordChangeView(AcademicVPRequiredMixin, auth_views.PasswordChangeView):
+    template_name = 'academic_vp/change_password.html'
+    success_url = reverse_lazy('academic_vp:profile')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Password changed successfully.')
+        return super().form_valid(form)
+
 
 class NotificationsView(AcademicVPRequiredMixin, TemplateView):
     template_name = 'academic_vp/notifications.html'

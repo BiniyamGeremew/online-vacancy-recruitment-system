@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+  <div class="card" style="border-radius:10px;">
+    <div class="card-header" style="background:#f4f6f9;">
+      <h3 class="card-title" style="font-weight:600;">Edit Profile</h3>
+    </div>
+
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+
+        {% if user_form.non_field_errors %}
+          <div class="alert alert-danger" style="margin-bottom:15px;">
+            {{ user_form.non_field_errors }}
+          </div>
+        {% endif %}
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group" style="margin-bottom:18px;">
+              <label style="font-weight:600;">{{ user_form.first_name.label }}</label>
+              {{ user_form.first_name }}
+              {% for error in user_form.first_name.errors %}
+                <div style="color:#dc3545; font-size:13px;">{{ error }}</div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="form-group" style="margin-bottom:18px;">
+              <label style="font-weight:600;">{{ user_form.last_name.label }}</label>
+              {{ user_form.last_name }}
+              {% for error in user_form.last_name.errors %}
+                <div style="color:#dc3545; font-size:13px;">{{ error }}</div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:18px;">
+          <label style="font-weight:600;">{{ user_form.email.label }}</label>
+          {{ user_form.email }}
+          {% for error in user_form.email.errors %}
+            <div style="color:#dc3545; font-size:13px;">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="form-group" style="margin-bottom:18px;">
+          <label style="font-weight:600;">{{ profile_form.phone_number.label }}</label>
+          {{ profile_form.phone_number }}
+          {% for error in profile_form.phone_number.errors %}
+            <div style="color:#dc3545; font-size:13px;">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="form-group" style="margin-bottom:18px;">
+          <label style="font-weight:600;">{{ profile_form.office_location.label }}</label>
+          {{ profile_form.office_location }}
+          {% for error in profile_form.office_location.errors %}
+            <div style="color:#dc3545; font-size:13px;">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="form-group" style="margin-bottom:18px;">
+          <label style="font-weight:600;">{{ profile_form.bio.label }}</label>
+          {{ profile_form.bio }}
+          {% for error in profile_form.bio.errors %}
+            <div style="color:#dc3545; font-size:13px;">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div style="margin-top:25px;">
+          <button type="submit" class="btn btn-primary" style="margin-right:10px;">Save Changes</button>
+          <a href="{% url 'academic_vp:profile' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

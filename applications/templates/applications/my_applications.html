@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}My Applications{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid" style="max-width:1000px;margin:auto;">
+
+  <!-- ================= HEADER ================= -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-header">
+      <h4>My Applications</h4>
+    </div>
+  </div>
+
+  <!-- ================= APPLICATIONS LIST ================= -->
+  <div class="card shadow-sm">
+    <div class="card-body">
+      {% if page_obj %}
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Vacancy</th>
+            <th>Position</th>
+            <th>Status</th>
+            <th>Submitted Date</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for app in page_obj %}
+          <tr>
+            <td>
+              {{ app.position.vacancy.employee_request.subject }}
+            </td>
+
+            <td>
+              {{ app.position.academic_rank }}
+            </td>
+
+            <td>
+              <span class="badge 
+                {% if app.status == 'submitted' %}badge-primary
+                {% elif app.status == 'eligible' %}badge-info
+                {% elif app.status == 'shortlisted' %}badge-success
+                {% elif app.status == 'rejected' %}badge-danger
+                {% elif app.status == 'interview' %}badge-warning
+                {% elif app.status == 'final_selection' %}badge-success
+                {% endif %}">
+                {{ app.get_status_display }}
+              </span>
+            </td>
+
+            <td>
+              {{ app.submitted_at|date:"M d, Y" }}
+            </td>
+            <td>
+              <a href="{% url 'applicant:vacancy_board_detail' app.position.vacancy.id %}"
+                 class="btn btn-sm btn-outline-primary">
+                Review
+              </a>
+            </td>
+
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      {% include 'components/pagination.html' %}
+
+      {% else %}
+      <p class="text-center text-muted">
+        You haven't submitted any applications yet.
+      </p>
+
+      <a href="{% url 'applicant:vacancy_board_list' %}" class="btn btn-primary">
+        Browse Vacancies
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

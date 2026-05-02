@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Shortlisted Candidates{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid" style="max-width:1200px;margin:auto;">
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <div>
+        <h4 class="mb-0">Shortlisted Candidates for {{ vacancy.employee_request.subject }}</h4>
+        <small class="text-muted">Review shortlist and finalize before exam preparation.</small>
+
+```
+    {% if shortlist_finalized %}
+      <span class="badge bg-success mt-2">Shortlist Finalized</span>
+    {% endif %}
+  </div>
+
+  <div>
+    <a href="{% url 'hr_officer:vacancy_screening' vacancy.id %}" class="btn btn-outline-primary btn-sm">
+      Back to Screening
+    </a>
+  </div>
+</div>
+```
+
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+
+```
+  {% if not deadline_passed %}
+    <div class="alert alert-warning">
+      Shortlisting available only after deadline.
+    </div>
+  {% endif %}
+
+  {% if shortlist_finalized %}
+    <div class="alert alert-success">
+      Shortlist finalized. No further changes allowed.
+    </div>
+  {% endif %}
+
+  {% if page_obj and page_obj.object_list %}
+
+    {% if deadline_passed and not shortlist_finalized %}
+    <form method="post" class="mb-3">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="finalize">
+      <button type="submit" class="btn btn-success">
+        Finalize Shortlist
+      </button>
+    </form>
+    {% endif %}
+
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Applicant</th>
+          <th>Score</th>
+          <th>CGPA</th>
+          <th>Documents</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for app in page_obj %}
+        <tr>
+          <td>{{ app.applicant.user.get_full_name }}</td>
+          <td>{{ app.ranking_score|default_if_none:"0.00" }}</td>
+          <td>{{ app.profile_snapshot.education.0.grade|default:'N/A' }}</td>
+
+          <td>
+            {% for doc in app.profile_snapshot.documents %}
+              <div>
+                <a href="{{ doc.file_url }}" target="_blank">
+                  {{ doc.document_type|title }}
+                </a>
+              </div>
+            {% empty %}
+              <span class="text-muted">No documents</span>
+            {% endfor %}
+          </td>
+
+          <td class="d-flex gap-1 flex-wrap">
+
+            <a href="{% url 'hr_officer:application_detail' app.id %}"
+               class="btn btn-sm btn-outline-primary">
+              View
+            </a>
+
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="application_id" value="{{ app.id }}">
+              <input type="hidden" name="action" value="remove">
+              <button type="submit"
+                      class="btn btn-sm btn-danger"
+                      {% if shortlist_finalized %}disabled{% endif %}>
+                Remove
+              </button>
+            </form>
+
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% include 'components/pagination.html' %}
+
+  {% else %}
+    <p class="text-muted text-center">No shortlisted candidates.</p>
+  {% endif %}
+
+</div>
+```
+
+  </div>
+
+</div>
+{% endblock %}

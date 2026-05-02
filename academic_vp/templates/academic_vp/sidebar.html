@@ -10,8 +10,9 @@
     <li class="nav-item"><a href="{% url 'academic_vp:pending_requests' %}" class="nav-link"><i class="nav-icon fas fa-list text-info"></i><p>Pending Requests</p></a></li>
     <li class="nav-item"><a href="{% url 'academic_vp:sent_requests' %}" class="nav-link"><i class="nav-icon fas fa-paper-plane text-success"></i><p>Forwarded to HR</p></a></li>
     <li class="nav-item"><a href="{% url 'academic_vp:rejected_requests' %}" class="nav-link"><i class="nav-icon fas fa-times-circle text-danger"></i><p>Rejected Requests</p></a></li>
-    <li class="nav-item"><a href="{% url 'academic_vp:notifications' %}" class="nav-link"><i class="nav-icon fas fa-bell text-warning"></i><p>Notifications</p></a></li>
+  
     <li class="nav-item"><a href="{% url 'academic_vp:profile' %}" class="nav-link"><i class="nav-icon fas fa-user text-muted"></i><p>Profile</p></a></li>
+    <li class="nav-item"><a href="{% url 'academic_vp:change_password' %}" class="nav-link"><i class="nav-icon fas fa-key text-warning"></i><p>Change Password</p></a></li>
     <li class="nav-item">
   <form id="logout-form" method="post" action="{% url 'accounts:logout' %}" style="display: none;">
     {% csrf_token %}

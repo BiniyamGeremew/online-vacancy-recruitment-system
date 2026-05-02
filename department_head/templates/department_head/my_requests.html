@@ -31,7 +31,8 @@
 
           <tbody>
 
-            {% for r in requests %}
+            {% for item in requests_with_status %}
+            {% with r=item.request %}
 
             <tr>
 
@@ -41,8 +42,17 @@
 
               <td>
 
-                {% if r.status == STATUS_SUBMITTED %}
-                  <span class="badge bg-info">Submitted</span>
+                {% if item.derived_status == "Shortlist Finalized" %}
+                  <span class="badge bg-success">Shortlist Finalized</span>
+
+                {% elif item.derived_status == "Shortlist In Progress" %}
+                  <span class="badge bg-warning">Shortlist In Progress</span>
+
+                {% elif item.derived_status == "Vacancy Published" %}
+                  <span class="badge bg-info">Vacancy Published</span>
+
+                {% elif r.status == STATUS_SUBMITTED %}
+                  <span class="badge bg-secondary">Submitted</span>
 
                 {% elif r.status == STATUS_APPROVED_BY_DEAN %}
                   <span class="badge bg-success">Approved</span>
@@ -98,6 +108,7 @@
 
             </tr>
 
+            {% endwith %}
             {% empty %}
 
             <tr>
@@ -113,9 +124,8 @@
         </table>
       </div>
 
-    </div>
+        {% include 'components/pagination.html' %}
 
-  </div>
 
 </div>
 

@@ -47,7 +47,7 @@
           <div class="dropdown-divider"></div>
 
           {% for note in notifications %}
-            <a href="#" class="dropdown-item">
+            <a href="{% url 'notifications:read' note.id %}" class="dropdown-item {% if not note.is_read %}font-weight-bold{% endif %}">
               <i class="fas fa-info-circle mr-2"></i>
               {{ note.message|truncatechars:50 }}
               <span class="float-right text-muted text-sm">
@@ -61,7 +61,7 @@
             </span>
           {% endfor %}
 
-          <a href="#" class="dropdown-item dropdown-footer">
+          <a href="{% url 'notifications:list' %}" class="dropdown-item dropdown-footer">
             View All Notifications
           </a>
         </div>

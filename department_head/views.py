@@ -1,23 +1,29 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth import views as auth_views
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView, DetailView, UpdateView
 from django.views import View
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseForbidden
+from django.utils import timezone
+
+from core.utils.pagination import PaginationMixin
 
 from .forms import (
     EmployeeRequestForm,
     EmployeeRequestItemFormset,
     EmployeeRequestItemFormsetCreate,
+    DepartmentHeadUserForm,
+    DepartmentHeadProfileForm,
 )
 from .models import EmployeeRequest
+from applications.models import Application
 from .services.ai_request_generator import generate_employee_request
 from organization.constants import RequestStatus
 import json
 from django.contrib import messages
 from django.views.decorators.http import require_POST
-from django.http import JsonResponse, HttpResponseForbidden
 
 
 @login_required
@@ -98,10 +104,11 @@ class SubmitEmployeeRequestView(DepartmentHeadRequiredMixin, CreateView):
             return self.form_invalid(form)
 
 
-class MyEmployeeRequestsView(LoginRequiredMixin, ListView):
+class MyEmployeeRequestsView(LoginRequiredMixin, PaginationMixin, ListView):
     model = EmployeeRequest
     template_name = 'department_head/my_requests.html'
     context_object_name = 'requests'
+    paginate_by = 10
 
     def get_queryset(self):
         profile = getattr(self.request.user, 'userprofile', None)
@@ -111,7 +118,7 @@ class MyEmployeeRequestsView(LoginRequiredMixin, ListView):
 
         return EmployeeRequest.objects.filter(
             department=profile.department
-        ).order_by('-date_submitted')
+        ).select_related('vacancy').order_by('-date_submitted')
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -121,7 +128,30 @@ class MyEmployeeRequestsView(LoginRequiredMixin, ListView):
         ctx['STATUS_REJECTED_BY_DEAN'] = RequestStatus.REJECTED_BY_DEAN
         ctx['STATUS_FORWARDED_TO_VP'] = RequestStatus.FORWARDED_TO_VP
 
+        # Add derived statuses for each request
+        requests_with_status = []
+        for request in ctx['requests']:
+            vacancy = getattr(request, 'vacancy', None)
+            derived_status = self.get_derived_status(request, vacancy)
+            requests_with_status.append({
+                'request': request,
+                'derived_status': derived_status,
+                'vacancy': vacancy,
+            })
+        ctx['requests_with_status'] = requests_with_status
+
         return ctx
+
+    def get_derived_status(self, request, vacancy):
+        if not vacancy:
+            return request.status  # Use original status if no vacancy
+
+        if vacancy.shortlist_finalized:
+            return "Shortlist Finalized"
+        elif vacancy.deadline and vacancy.deadline >= timezone.now().date():
+            return "Shortlist In Progress"
+        else:
+            return "Vacancy Published"
 
 class EmployeeRequestDetailView(LoginRequiredMixin, DetailView):
     model = EmployeeRequest
@@ -131,8 +161,25 @@ class EmployeeRequestDetailView(LoginRequiredMixin, DetailView):
     def get_queryset(self):
         profile = getattr(self.request.user, 'userprofile', None)
         if profile and profile.department:
-            return EmployeeRequest.objects.filter(department=profile.department)
+            return EmployeeRequest.objects.filter(department=profile.department).select_related('vacancy')
         return EmployeeRequest.objects.none()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        request_obj = self.object
+
+        # Get shortlisted candidates if vacancy exists and shortlist finalized
+        shortlisted_candidates = []
+        vacancy = getattr(request_obj, 'vacancy', None)
+        if vacancy and vacancy.shortlist_finalized:
+            shortlisted_candidates = Application.objects.filter(
+                position__vacancy=vacancy,
+                status=Application.STATUS_SHORTLISTED
+            ).select_related('applicant__user', 'position').order_by('-ranking_score')
+
+        context['shortlisted_candidates'] = shortlisted_candidates
+        context['vacancy'] = vacancy
+        return context
 
 
 class UpdateEmployeeRequestView(DepartmentHeadRequiredMixin, UpdateView):
@@ -219,10 +266,11 @@ class DeleteEmployeeRequestView(DepartmentHeadRequiredMixin, View):
         return redirect('department_head:my_requests')
 
 
-class ApprovedEmployeeRequestsView(LoginRequiredMixin, ListView):
+class ApprovedEmployeeRequestsView(LoginRequiredMixin, PaginationMixin, ListView):
     model = EmployeeRequest
     template_name = 'department_head/approved_requests.html'
     context_object_name = 'requests'
+    paginate_by = 10
 
     def get_queryset(self):
         profile = getattr(self.request.user, 'userprofile', None)
@@ -236,10 +284,11 @@ class ApprovedEmployeeRequestsView(LoginRequiredMixin, ListView):
         ).order_by('-date_submitted')
 
 
-class RejectedEmployeeRequestsView(LoginRequiredMixin, ListView):
+class RejectedEmployeeRequestsView(LoginRequiredMixin, PaginationMixin, ListView):
     model = EmployeeRequest
     template_name = 'department_head/rejected_request.html'
     context_object_name = 'requests'
+    paginate_by = 10
 
     def get_queryset(self):
         profile = getattr(self.request.user, 'userprofile', None)
@@ -251,6 +300,53 @@ class RejectedEmployeeRequestsView(LoginRequiredMixin, ListView):
             department=profile.department,
             status=RequestStatus.REJECTED_BY_DEAN
         ).order_by('-date_submitted')
+
+
+@login_required
+def profile(request):
+    profile = getattr(request.user, 'userprofile', None)
+    return render(request, 'department_head/profile.html', {
+        'profile': profile,
+    })
+
+
+class DepartmentHeadProfileUpdateView(LoginRequiredMixin, View):
+    template_name = 'department_head/profile_edit.html'
+
+    def get(self, request, *args, **kwargs):
+        user_form = DepartmentHeadUserForm(instance=request.user)
+        profile_form = DepartmentHeadProfileForm(instance=getattr(request.user, 'userprofile', None))
+        return render(request, self.template_name, {
+            'user_form': user_form,
+            'profile_form': profile_form,
+        })
+
+    def post(self, request, *args, **kwargs):
+        profile_instance = getattr(request.user, 'userprofile', None)
+        user_form = DepartmentHeadUserForm(request.POST, instance=request.user)
+        profile_form = DepartmentHeadProfileForm(request.POST, instance=profile_instance)
+
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile = profile_form.save(commit=False)
+            profile.user = request.user
+            profile.save()
+            messages.success(request, 'Profile updated successfully.')
+            return redirect('department_head:profile')
+
+        return render(request, self.template_name, {
+            'user_form': user_form,
+            'profile_form': profile_form,
+        })
+
+
+class DepartmentHeadPasswordChangeView(LoginRequiredMixin, auth_views.PasswordChangeView):
+    template_name = 'department_head/change_password.html'
+    success_url = reverse_lazy('department_head:profile')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Password changed successfully.')
+        return super().form_valid(form)
 
 
 @login_required
