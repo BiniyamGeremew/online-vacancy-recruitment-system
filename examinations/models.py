@@ -24,7 +24,9 @@ class Exam(models.Model):
     total_marks = models.PositiveIntegerField(default=0)
     pass_mark = models.PositiveIntegerField(default=0)
     duration_minutes = models.PositiveIntegerField(default=30)
+    start_time = models.DateTimeField(null=True, blank=True, help_text='Scheduled start time for the exam')
     is_published = models.BooleanField(default=False)
+    published_at = models.DateTimeField(null=True, blank=True)
     finalized = models.BooleanField(default=False)
     finalized_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -38,6 +40,12 @@ class Exam(models.Model):
     @property
     def question_count(self):
         return self.questions.count()
+
+    @property
+    def scheduled_end_time(self):
+        if self.start_time:
+            return self.start_time + timedelta(minutes=self.duration_minutes)
+        return None
 
 
 class Question(models.Model):
@@ -97,6 +105,16 @@ class Choice(models.Model):
 
 
 class ExamSession(models.Model):
+    STATUS_NOT_STARTED = 'NOT_STARTED'
+    STATUS_ACTIVE = 'ACTIVE'
+    STATUS_FINISHED = 'FINISHED'
+
+    SESSION_STATUS_CHOICES = [
+        (STATUS_NOT_STARTED, 'Not Started'),
+        (STATUS_ACTIVE, 'Active'),
+        (STATUS_FINISHED, 'Finished'),
+    ]
+
     exam = models.ForeignKey(
         Exam,
         on_delete=models.CASCADE,
@@ -111,6 +129,11 @@ class ExamSession(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='exam_sessions'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=SESSION_STATUS_CHOICES,
+        default=STATUS_NOT_STARTED
     )
     start_time = models.DateTimeField(null=True, blank=True)
     started_at = models.DateTimeField(null=True, blank=True)
@@ -138,6 +161,27 @@ class ExamSession(models.Model):
         if not self.start_time:
             return False
         return timezone.now() > self.start_time + timedelta(minutes=self.exam.duration_minutes)
+
+    @property
+    def current_status(self):
+        now = timezone.now()
+        if self.status == self.STATUS_FINISHED or self.is_submitted:
+            return self.STATUS_FINISHED
+        if self.exam.start_time:
+            if now >= self.exam.start_time:
+                if self.exam.scheduled_end_time and now > self.exam.scheduled_end_time:
+                    return self.STATUS_FINISHED
+                return self.STATUS_ACTIVE
+            else:
+                return self.STATUS_NOT_STARTED
+        else:
+            # If no start_time is set, exam is active immediately (for published exams)
+            if self.exam.is_published:
+                if self.exam.scheduled_end_time and now > self.exam.scheduled_end_time:
+                    return self.STATUS_FINISHED
+                return self.STATUS_ACTIVE
+            else:
+                return self.STATUS_NOT_STARTED
 
 
 class ExamSessionActivity(models.Model):

@@ -9,6 +9,7 @@
       <div class="card-header">
         <h3 class="card-title">Create Exam for {{ vacancy.employee_request.subject }}</h3>
       </div>
+
       <div class="card-body">
         {% if not can_prepare_exam %}
         <div class="alert alert-warning">
@@ -19,59 +20,80 @@
         <form method="post" id="exam-form">
           {% csrf_token %}
 
+          <!-- ================= BASIC INFO ================= -->
           <div class="form-row">
             <div class="form-group col-md-6">
               {{ exam_form.title.label_tag }}
               {{ exam_form.title }}
             </div>
-            <div class="form-group col-md-3">
-              {{ exam_form.duration_minutes.label_tag }}
-              {{ exam_form.duration_minutes }}
-            </div>
-            <div class="form-group col-md-3">
-              {{ exam_form.total_marks.label_tag }}
-              {{ exam_form.total_marks }}
+
+            <!-- Start time input using form widget for proper value population -->
+            <div class="form-group col-md-6">
+              {{ exam_form.start_time.label_tag }}
+              {{ exam_form.start_time }}
+              {% if exam_form.start_time.errors %}
+                <div class="text-danger">
+                  {{ exam_form.start_time.errors }}
+                </div>
+              {% endif %}
             </div>
           </div>
 
+          <!-- ================= QUESTION SETTINGS ================= -->
           <div class="form-row">
-            <div class="form-group col-md-4">
-              {{ exam_form.pass_mark.label_tag }}
-              {{ exam_form.pass_mark }}
-            </div>
-            <div class="form-group col-md-4">
+            <div class="form-group col-md-3">
               {{ exam_form.question_count.label_tag }}
               {{ exam_form.question_count }}
             </div>
-            <div class="form-group col-md-4">
+
+            <div class="form-group col-md-3">
+              {{ exam_form.mcq_count.label_tag }}
+              {{ exam_form.mcq_count }}
+            </div>
+
+            <div class="form-group col-md-3">
+              {{ exam_form.short_answer_count.label_tag }}
+              {{ exam_form.short_answer_count }}
+            </div>
+
+            <div class="form-group col-md-3">
               {{ exam_form.difficulty_level.label_tag }}
               {{ exam_form.difficulty_level }}
             </div>
           </div>
 
+          <!-- ================= EXAM SETTINGS ================= -->
           <div class="form-row">
-            <div class="form-group col-md-6">
-              {{ exam_form.mcq_count.label_tag }}
-              {{ exam_form.mcq_count }}
+            <div class="form-group col-md-3">
+              {{ exam_form.duration_minutes.label_tag }}
+              {{ exam_form.duration_minutes }}
             </div>
-            <div class="form-group col-md-6">
-              {{ exam_form.short_answer_count.label_tag }}
-              {{ exam_form.short_answer_count }}
+
+            <div class="form-group col-md-3">
+              {{ exam_form.total_marks.label_tag }}
+              {{ exam_form.total_marks }}
+            </div>
+
+            <div class="form-group col-md-3">
+              {{ exam_form.pass_mark.label_tag }}
+              {{ exam_form.pass_mark }}
+            </div>
+
+            <div class="form-group col-md-3">
+              <label>&nbsp;</label>
+              <button type="submit" name="action" value="save_exam"
+                      class="btn btn-secondary btn-block"
+                      {% if not can_prepare_exam %}disabled{% endif %}>
+                Save Exam Settings
+              </button>
             </div>
           </div>
 
-          <div class="form-group">
-            <button type="submit" name="action" value="save_exam"
-                    class="btn btn-secondary"
-                    {% if not can_prepare_exam %}disabled{% endif %}>
-              Save Exam Settings
-            </button>
-          </div>
         </form>
       </div>
     </div>
 
-    <!-- AI Generation -->
+    <!-- ================= AI GENERATION ================= -->
     {% if exam %}
     <div class="card card-info">
       <div class="card-header">
@@ -81,15 +103,18 @@
         <form method="post" onsubmit="syncAiSettings()">
           {% csrf_token %}
           <input type="hidden" name="action" value="generate_ai">
+
           <input id="ai_question_count" type="hidden" name="question_count" value="{{ exam_form.question_count.value|default:'10' }}">
           <input id="ai_mcq_count" type="hidden" name="mcq_count" value="{{ exam_form.mcq_count.value|default:'10' }}">
           <input id="ai_short_answer_count" type="hidden" name="short_answer_count" value="{{ exam_form.short_answer_count.value|default:'0' }}">
           <input id="ai_difficulty_level" type="hidden" name="difficulty_level" value="{{ exam_form.difficulty_level.value|default:'medium' }}">
 
           <p>
-            Generate <strong><span id="ai_total_questions_text">{{ exam_form.question_count.value|default:'10' }}</span></strong> questions using AI based on the vacancy requirements.
-            This includes <strong><span id="ai_mcq_count_text">{{ exam_form.mcq_count.value|default:'10' }}</span></strong> MCQs and <strong><span id="ai_short_answer_count_text">{{ exam_form.short_answer_count.value|default:'0' }}</span></strong> short-answer questions.
+            Generate <strong><span id="ai_total_questions_text">{{ exam_form.question_count.value|default:'10' }}</span></strong> questions using AI
+            (<strong><span id="ai_mcq_count_text">{{ exam_form.mcq_count.value|default:'10' }}</span></strong> MCQ,
+            <strong><span id="ai_short_answer_count_text">{{ exam_form.short_answer_count.value|default:'0' }}</span></strong> short-answer).
           </p>
+
           <button type="submit" class="btn btn-success" {% if not can_prepare_exam %}disabled{% endif %}>
             Generate Exam with AI
           </button>
@@ -98,7 +123,7 @@
     </div>
     {% endif %}
 
-    <!-- Publish Section -->
+    <!-- ================= PUBLISH ================= -->
     {% if has_draft_questions %}
     <div class="card card-success">
       <div class="card-header d-flex justify-content-between align-items-center">
@@ -107,8 +132,10 @@
           Edit Draft Questions
         </a>
       </div>
+
       <div class="card-body">
         <p>Ready to publish the exam? This will make it available to shortlisted candidates.</p>
+
         <form method="post">
           {% csrf_token %}
           <input type="hidden" name="action" value="publish_exam">
@@ -122,13 +149,16 @@
 
   </div>
 
+  <!-- ================= RIGHT PANEL ================= -->
   <div class="col-md-4">
     <div class="card card-secondary">
       <div class="card-header">
         <h3 class="card-title">Exam Summary</h3>
       </div>
+
       <div class="card-body">
         <p><strong>Vacancy:</strong> {{ vacancy.employee_request.subject }}</p>
+
         <p><strong>Status:</strong>
           {% if exam %}
             {{ exam.is_published|yesno:'Published,Unpublished' }}
@@ -139,10 +169,13 @@
 
         {% if exam %}
           <p><strong>Draft Questions:</strong> {{ draft_question_count }}</p>
-          <p><strong>Published Questions:</strong> {{ published_question_count }}</p>
           <p><strong>Duration:</strong> {{ exam.duration_minutes }} minutes</p>
           <p><strong>Total Marks:</strong> {{ exam_total_marks }}</p>
           <p><strong>Pass Mark:</strong> {{ exam_pass_mark }}</p>
+
+          {% if exam.published_at %}
+            <p><strong>Published At:</strong> {{ exam.published_at|date:"M d, Y H:i" }}</p>
+          {% endif %}
         {% endif %}
       </div>
     </div>
@@ -152,6 +185,7 @@
       <div class="card-header">
         <h3 class="card-title">Draft Questions</h3>
       </div>
+
       <div class="card-body table-responsive p-0">
         <table class="table table-hover">
           <thead>
@@ -162,6 +196,7 @@
               <th>Marks</th>
             </tr>
           </thead>
+
           <tbody>
             {% for question in draft_questions %}
               <tr>
@@ -182,21 +217,20 @@
 <script>
 function syncAiSettings() {
   const fieldNames = ['question_count', 'mcq_count', 'short_answer_count', 'difficulty_level'];
+
   fieldNames.forEach((name) => {
     const source = document.getElementById(`id_${name}`);
     const target = document.getElementById(`ai_${name}`);
     const display = document.getElementById(`ai_${name}_text`);
-    if (source && target) {
-      target.value = source.value;
-    }
-    if (source && display) {
-      display.textContent = source.value;
-    }
+
+    if (source && target) target.value = source.value;
+    if (source && display) display.textContent = source.value;
   });
 }
 
 function bindAiSettingUpdates() {
   const fieldNames = ['question_count', 'mcq_count', 'short_answer_count', 'difficulty_level'];
+
   fieldNames.forEach((name) => {
     const source = document.getElementById(`id_${name}`);
     if (source) {
@@ -213,5 +247,3 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 {% endblock %}
-</script>
-
