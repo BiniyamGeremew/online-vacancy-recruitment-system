@@ -71,91 +71,29 @@
       </div>
     </div>
 
-    <!-- Question Creation Modes -->
+    <!-- AI Generation -->
     {% if exam %}
     <div class="card card-info">
       <div class="card-header">
-        <h3 class="card-title">Add Questions</h3>
+        <h3 class="card-title">AI Exam Generation</h3>
       </div>
       <div class="card-body">
-        <div class="mb-3">
-          <button type="button" class="btn btn-success" onclick="showMode('ai')">Generate with AI</button>
-          <button type="button" class="btn btn-info" onclick="showMode('manual')">Add Manually</button>
-        </div>
+        <form method="post" onsubmit="syncAiSettings()">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="generate_ai">
+          <input id="ai_question_count" type="hidden" name="question_count" value="{{ exam_form.question_count.value|default:'10' }}">
+          <input id="ai_mcq_count" type="hidden" name="mcq_count" value="{{ exam_form.mcq_count.value|default:'10' }}">
+          <input id="ai_short_answer_count" type="hidden" name="short_answer_count" value="{{ exam_form.short_answer_count.value|default:'0' }}">
+          <input id="ai_difficulty_level" type="hidden" name="difficulty_level" value="{{ exam_form.difficulty_level.value|default:'medium' }}">
 
-        <!-- AI Mode -->
-        <div id="ai-mode" style="display: none;">
-          <form method="post" onsubmit="syncAiSettings()">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="generate_ai">
-            <input id="ai_question_count" type="hidden" name="question_count" value="{{ exam_form.question_count.value|default:'10' }}">
-            <input id="ai_mcq_count" type="hidden" name="mcq_count" value="{{ exam_form.mcq_count.value|default:'10' }}">
-            <input id="ai_short_answer_count" type="hidden" name="short_answer_count" value="{{ exam_form.short_answer_count.value|default:'0' }}">
-            <input id="ai_difficulty_level" type="hidden" name="difficulty_level" value="{{ exam_form.difficulty_level.value|default:'medium' }}">
-            <p>
-              Generate <span id="ai_total_questions_text">{{ exam_form.question_count.value|default:'10' }}</span> questions using AI based on the vacancy requirements.
-              This includes <span id="ai_mcq_count_text">{{ exam_form.mcq_count.value|default:'10' }}</span> MCQs and <span id="ai_short_answer_count_text">{{ exam_form.short_answer_count.value|default:'0' }}</span> short-answer questions.
-            </p>
-            <button type="submit" class="btn btn-success" {% if not can_prepare_exam %}disabled{% endif %}>
-              Generate Questions with AI
-            </button>
-          </form>
-        </div>
-
-        <!-- Manual Mode -->
-        <div id="manual-mode" style="display: none;">
-          <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="add_question">
-
-            <div class="form-group">
-              {{ manual_form.question_text.label_tag }}
-              {{ manual_form.question_text }}
-            </div>
-
-            <div class="form-row">
-              <div class="form-group col-md-3">
-                {{ manual_form.question_type.label_tag }}
-                {{ manual_form.question_type }}
-              </div>
-              <div class="form-group col-md-3">
-                {{ manual_form.marks.label_tag }}
-                {{ manual_form.marks }}
-              </div>
-            </div>
-
-            <div id="mcq-choices" style="display: none;">
-              <div class="form-row">
-                <div class="form-group col-md-6">
-                  {{ manual_form.choice_1.label_tag }}
-                  {{ manual_form.choice_1 }}
-                </div>
-                <div class="form-group col-md-6">
-                  {{ manual_form.choice_2.label_tag }}
-                  {{ manual_form.choice_2 }}
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="form-group col-md-6">
-                  {{ manual_form.choice_3.label_tag }}
-                  {{ manual_form.choice_3 }}
-                </div>
-                <div class="form-group col-md-6">
-                  {{ manual_form.choice_4.label_tag }}
-                  {{ manual_form.choice_4 }}
-                </div>
-              </div>
-              <div class="form-group">
-                {{ manual_form.correct_choice.label_tag }}
-                {{ manual_form.correct_choice }}
-              </div>
-            </div>
-
-            <button type="submit" class="btn btn-outline-primary" {% if not can_prepare_exam %}disabled{% endif %}>
-              Add Question
-            </button>
-          </form>
-        </div>
+          <p>
+            Generate <strong><span id="ai_total_questions_text">{{ exam_form.question_count.value|default:'10' }}</span></strong> questions using AI based on the vacancy requirements.
+            This includes <strong><span id="ai_mcq_count_text">{{ exam_form.mcq_count.value|default:'10' }}</span></strong> MCQs and <strong><span id="ai_short_answer_count_text">{{ exam_form.short_answer_count.value|default:'0' }}</span></strong> short-answer questions.
+          </p>
+          <button type="submit" class="btn btn-success" {% if not can_prepare_exam %}disabled{% endif %}>
+            Generate Exam with AI
+          </button>
+        </form>
       </div>
     </div>
     {% endif %}
@@ -163,8 +101,11 @@
     <!-- Publish Section -->
     {% if has_draft_questions %}
     <div class="card card-success">
-      <div class="card-header">
+      <div class="card-header d-flex justify-content-between align-items-center">
         <h3 class="card-title">Publish Exam</h3>
+        <a href="{% url 'department_head:ai_review' exam_id=exam.id %}?edit_draft=1" class="btn btn-danger btn-sm">
+          Edit Draft Questions
+        </a>
       </div>
       <div class="card-body">
         <p>Ready to publish the exam? This will make it available to shortlisted candidates.</p>
@@ -200,8 +141,8 @@
           <p><strong>Draft Questions:</strong> {{ draft_question_count }}</p>
           <p><strong>Published Questions:</strong> {{ published_question_count }}</p>
           <p><strong>Duration:</strong> {{ exam.duration_minutes }} minutes</p>
-          <p><strong>Total Marks:</strong> {{ exam.total_marks }}</p>
-          <p><strong>Pass Mark:</strong> {{ exam.pass_mark }}</p>
+          <p><strong>Total Marks:</strong> {{ exam_total_marks }}</p>
+          <p><strong>Pass Mark:</strong> {{ exam_pass_mark }}</p>
         {% endif %}
       </div>
     </div>
@@ -224,7 +165,7 @@
           <tbody>
             {% for question in draft_questions %}
               <tr>
-                <td>{{ question.order }}</td>
+                <td>{{ forloop.counter }}</td>
                 <td>{{ question.question_text|truncatechars:50 }}</td>
                 <td>{{ question.get_question_type_display }}</td>
                 <td>{{ question.marks }}</td>
@@ -239,13 +180,6 @@
 </div>
 
 <script>
-function showMode(mode) {
-  const aiMode = document.getElementById('ai-mode');
-  const manualMode = document.getElementById('manual-mode');
-  if (aiMode) aiMode.style.display = mode === 'ai' ? 'block' : 'none';
-  if (manualMode) manualMode.style.display = mode === 'manual' ? 'block' : 'none';
-}
-
 function syncAiSettings() {
   const fieldNames = ['question_count', 'mcq_count', 'short_answer_count', 'difficulty_level'];
   fieldNames.forEach((name) => {
@@ -261,15 +195,23 @@ function syncAiSettings() {
   });
 }
 
-const questionTypeField = document.getElementById('id_question_type');
-if (questionTypeField) {
-  questionTypeField.addEventListener('change', function() {
-    const mcqChoices = document.getElementById('mcq-choices');
-    if (mcqChoices) {
-      mcqChoices.style.display = this.value === 'MCQ' ? 'block' : 'none';
+function bindAiSettingUpdates() {
+  const fieldNames = ['question_count', 'mcq_count', 'short_answer_count', 'difficulty_level'];
+  fieldNames.forEach((name) => {
+    const source = document.getElementById(`id_${name}`);
+    if (source) {
+      source.addEventListener('input', syncAiSettings);
+      source.addEventListener('change', syncAiSettings);
     }
   });
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+  bindAiSettingUpdates();
+  syncAiSettings();
+});
 </script>
 
 {% endblock %}
+</script>
+

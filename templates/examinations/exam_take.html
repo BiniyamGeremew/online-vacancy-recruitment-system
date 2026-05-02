@@ -72,6 +72,7 @@
   const form = document.getElementById('exam-form');
 
   function computeFingerprint() {
+    // Basic protection only: this fingerprint is browser metadata-based and is spoofable.
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'unknown';
     return [navigator.userAgent, screen.width + 'x' + screen.height, timezone].join('|');
   }
@@ -136,7 +137,11 @@
   }
 
   function disableKeyShortcuts(event) {
-    if (event.key === 'F12' || (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'i')) {
+    const key = event.key.toLowerCase();
+    if (event.key === 'F12' || (event.ctrlKey && event.shiftKey && key === 'i')) {
+      event.preventDefault();
+    }
+    if ((event.ctrlKey || event.metaKey) && ['c', 'v', 'x'].includes(key)) {
       event.preventDefault();
     }
   }
@@ -159,6 +164,10 @@
     if (document.hidden) {
       sendSecurityEvent('tab_switch');
     }
+  });
+
+  window.addEventListener('blur', function () {
+    sendSecurityEvent('tab_switch');
   });
 
   ['contextmenu', 'copy', 'paste', 'cut', 'selectstart'].forEach(evt => {

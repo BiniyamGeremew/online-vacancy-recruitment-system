@@ -1,4 +1,5 @@
 import json
+from decimal import Decimal
 from typing import List, Dict, Any
 from django.core.cache import cache
 from django.conf import settings
@@ -42,7 +43,7 @@ class AIQuestionService:
 
             if question_data["question_type"] == Question.TYPE_MCQ:
                 question_data["choices"] = q.get("choices", [])
-                question_data["correct_choice"] = q.get("correct_answer")
+                question_data["correct_answer"] = q.get("correct_answer")
 
             questions_data.append(question_data)
 
@@ -64,25 +65,44 @@ class AIQuestionService:
     @staticmethod
     def save_questions_to_draft(exam: Exam, questions_data: List[Dict[str, Any]]) -> None:
         """Save questions as draft to database."""
+        exam.questions.filter(status=Question.STATUS_DRAFT).delete()
+
+        total_marks = 0
+        current_order = 0
         for q_data in questions_data:
+            current_order += 1
+            marks = q_data.get("marks", 0) or 0
+            order = q_data.get("order") if isinstance(q_data.get("order"), int) and q_data.get("order") > 0 else current_order
             question = Question.objects.create(
                 exam=exam,
                 question_text=q_data["question_text"],
                 question_type=q_data["question_type"],
-                marks=q_data.get("marks", 1),
-                order=q_data.get("order", 0),
+                marks=marks,
+                order=order,
                 status=Question.STATUS_DRAFT
             )
+            total_marks += marks
 
             # Create choices for MCQ
             if question.question_type == Question.TYPE_MCQ:
-                for choice_text in q_data["choices"]:
-                    is_correct = (choice_text == q_data["correct_choice"])
+                correct_answer = q_data.get("correct_choice") or q_data.get("correct_answer")
+                choices = q_data.get("choices") or []
+                for index, choice_text in enumerate(choices):
+                    is_correct = False
+                    if isinstance(choice_text, str) and isinstance(correct_answer, str):
+                        is_correct = choice_text.strip() == correct_answer.strip()
+                    elif index == 0 and not correct_answer:
+                        is_correct = True
+
                     Choice.objects.create(
                         question=question,
                         option_text=choice_text,
                         is_correct=is_correct
                     )
+
+        exam.total_marks = total_marks
+        exam.pass_mark = int(Decimal(total_marks) * Decimal('0.5')) if total_marks else 0
+        exam.save(update_fields=['total_marks', 'pass_mark'])
 
     @staticmethod
     def clear_session_questions(request, exam_id: int) -> None:

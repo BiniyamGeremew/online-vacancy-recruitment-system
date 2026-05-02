@@ -144,21 +144,58 @@ def generate_exam_questions(
             if not isinstance(choices, list):
                 continue
 
-            choices = [c.strip() for c in choices if isinstance(c, str)][:4]
+            normalized_choices = []
+            seen = set()
+            for item in choices:
+                if not isinstance(item, str):
+                    continue
+                text_choice = item.strip()
+                if not text_choice:
+                    continue
+                key = text_choice.lower()
+                if key not in seen:
+                    seen.add(key)
+                    normalized_choices.append(text_choice)
 
-            if len(choices) != 4:
+            if len(normalized_choices) < 4:
                 continue
 
             correct = q.get("correct_answer")
+            if isinstance(correct, str):
+                correct = correct.strip()
+            else:
+                correct = None
 
-            if not correct or correct not in choices:
+            if correct:
+                for item in normalized_choices:
+                    if item.strip().lower() == correct.lower():
+                        correct = item
+                        break
+
+            if not correct and len(normalized_choices) >= 4:
+                correct = normalized_choices[0]
+
+            if correct not in normalized_choices:
+                if len(normalized_choices) > 4 and any(item.strip().lower() == correct.lower() for item in normalized_choices):
+                    normalized_choices = [item for item in normalized_choices if item.strip().lower() != correct.lower()]
+                    normalized_choices = normalized_choices[:3] + [correct]
+                else:
+                    continue
+
+            if len(normalized_choices) > 4:
+                if correct in normalized_choices[:4]:
+                    normalized_choices = normalized_choices[:4]
+                else:
+                    normalized_choices = [correct] + [item for item in normalized_choices if item != correct][:3]
+
+            if len(normalized_choices) != 4:
                 continue
 
             validated.append({
                 "text": q_text,
                 "question_type": "MCQ",
-                "choices": choices,
-                "correct_answer": correct.strip(),
+                "choices": normalized_choices,
+                "correct_answer": correct,
             })
             continue
 

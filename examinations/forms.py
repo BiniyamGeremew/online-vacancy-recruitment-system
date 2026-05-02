@@ -1,5 +1,5 @@
 from django import forms
-from .models import Exam, Question
+from .models import Exam
 
 
 class ExamCreateForm(forms.ModelForm):
@@ -69,49 +69,3 @@ class ExamCreateForm(forms.ModelForm):
         return cleaned_data
 
 
-class ManualQuestionForm(forms.Form):
-    question_text = forms.CharField(widget=forms.Textarea(attrs={'rows': 3}), required=True)
-    question_type = forms.ChoiceField(
-        choices=Question.QUESTION_TYPE_CHOICES,
-        initial=Question.TYPE_MCQ,
-        required=True,
-    )
-    marks = forms.IntegerField(min_value=1, initial=1, required=True)
-    choice_1 = forms.CharField(required=False)
-    choice_2 = forms.CharField(required=False)
-    choice_3 = forms.CharField(required=False)
-    choice_4 = forms.CharField(required=False)
-    correct_choice = forms.ChoiceField(
-        choices=[('1', 'Choice 1'), ('2', 'Choice 2'), ('3', 'Choice 3'), ('4', 'Choice 4')],
-        required=False,
-    )
-
-    def clean(self):
-        cleaned_data = super().clean()
-        question_type = cleaned_data.get('question_type')
-
-        if question_type == Question.TYPE_MCQ:
-            choices = [
-                cleaned_data.get('choice_1'),
-                cleaned_data.get('choice_2'),
-                cleaned_data.get('choice_3'),
-                cleaned_data.get('choice_4'),
-            ]
-            if not all(choices):
-                raise forms.ValidationError('All four MCQ choices are required.')
-
-            correct_choice = cleaned_data.get('correct_choice')
-            if not correct_choice or not cleaned_data.get(f'choice_{correct_choice}'):
-                raise forms.ValidationError('A valid correct choice is required for MCQ questions.')
-
-        return cleaned_data
-
-
-class QuestionUploadForm(forms.Form):
-    questions_file = forms.FileField(required=True)
-
-    def clean_questions_file(self):
-        file = self.cleaned_data['questions_file']
-        if not file.name.endswith('.json'):
-            raise forms.ValidationError('Upload a JSON file with questions.')
-        return file

@@ -127,6 +127,9 @@ class ExamSession(models.Model):
 
     class Meta:
         ordering = ['-start_time']
+        constraints = [
+            models.UniqueConstraint(fields=['exam', 'application'], name='unique_exam_application_session')
+        ]
 
     def __str__(self):
         return f"Session for {self.applicant} on {self.exam.title}"
