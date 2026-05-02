@@ -79,10 +79,10 @@ You are an HR officer writing a REAL-WORLD UNIVERSITY JOB VACANCY ANNOUNCEMENT.
 
 STYLE:
 - Modern job advertisement format (not academic report)
-- No numbering or outlines
-- Clean headings only
+- Clean headings
 - Professional and natural tone
 - Must look like a real published vacancy
+- Output must be plain text only
 
 STRUCTURE:
 
@@ -107,6 +107,9 @@ Deadline
 How to Apply
 
 RULES:
+- DO NOT use Markdown formatting
+- DO NOT use **bold**, *, or #
+- Use plain text headings only
 - DO NOT use placeholders like [insert date]
 - DO NOT invent information
 - If missing data exists, use "To be announced"

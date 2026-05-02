@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Review AI Generated Questions{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Review AI Generated Questions for {{ exam.title }}</h3>
+      <div class="card-tools">
+        <a href="{% url 'department_head:create_exam' vacancy_id=exam.vacancy.id %}" class="btn btn-secondary btn-sm">
+          Back to Exam
+        </a>
+      </div>
+    </div>
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <p>Review and edit the AI-generated questions before saving them as draft.</p>
+        </div>
+
+        {% for question in questions_data %}
+        <div class="card mb-3">
+          <div class="card-header">
+            <h5>Question {{ forloop.counter }}</h5>
+          </div>
+          <div class="card-body">
+            <div class="form-group">
+              <label>Question Text</label>
+              <textarea name="question_text_{{ forloop.counter0 }}" class="form-control" rows="3">{{ question.question_text }}</textarea>
+            </div>
+
+            {% if question.question_type == 'MCQ' %}
+            <div class="form-group">
+              <label>Choices</label>
+              {% for choice in question.choices %}
+              <div class="input-group mb-2">
+                <div class="input-group-prepend">
+                  <div class="input-group-text">
+                    <input type="radio" name="correct_{{ forloop.parentloop.counter0 }}" value="{{ forloop.counter0 }}"
+                           {% if choice == question.correct_choice %}checked{% endif %}>
+                  </div>
+                </div>
+                <input type="text" name="choice_{{ forloop.parentloop.counter0 }}_{{ forloop.counter0 }}" class="form-control" value="{{ choice }}">
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="form-row">
+              <div class="col-md-2">
+                <label>Marks</label>
+                <input type="number" name="marks_{{ forloop.counter0 }}" class="form-control" value="{{ question.marks }}" min="1">
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+
+        <div class="form-group">
+          <button type="submit" name="action" value="save_draft" class="btn btn-success">
+            Save as Draft
+          </button>
+          <button type="submit" name="action" value="regenerate" class="btn btn-warning">
+            Regenerate with AI
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

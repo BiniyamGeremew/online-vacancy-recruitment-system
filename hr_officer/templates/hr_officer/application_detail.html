@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Application Detail{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid" style="max-width:1000px;margin:auto;">
+
+  <!-- ================= HEADER ================= -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h4>Application Detail</h4>
+      <span class="badge
+        {% if application.status == 'submitted' %}badge-primary
+        {% elif application.status == 'eligible' %}badge-info
+        {% elif application.status == 'shortlisted' %}badge-success
+        {% elif application.status == 'rejected' %}badge-danger
+        {% elif application.status == 'interview' %}badge-warning
+        {% elif application.status == 'final_selection' %}badge-success
+        {% endif %}">
+        {{ application.get_status_display }}
+      </span>
+      <span class="badge badge-secondary ml-2">Score: {{ application.ranking_score|default_if_none:"0.00" }}</span>
+    </div>
+  </div>
+
+  <!-- ================= AI EVALUATION ================= -->
+  {% if application.ai_summary %}
+  <div class="card shadow-sm mb-3">
+    <div class="card-header bg-info text-white">
+      <strong><i class="fas fa-robot"></i> AI Candidate Evaluation</strong>
+    </div>
+    <div class="card-body">
+      <p class="mb-0">{{ application.ai_summary }}</p>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ================= APPLICANT INFORMATION ================= -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-header">
+      <strong>Applicant Information</strong>
+    </div>
+    <div class="card-body">
+      <dl class="row">
+        <dt class="col-sm-3">Full Name</dt>
+        <dd class="col-sm-9">{{ application.profile_snapshot.personal_info.first_name }} {{ application.profile_snapshot.personal_info.last_name }}</dd>
+        <dt class="col-sm-3">Email</dt>
+        <dd class="col-sm-9">{{ application.profile_snapshot.personal_info.email }}</dd>
+        <dt class="col-sm-3">Phone</dt>
+        <dd class="col-sm-9">{{ application.profile_snapshot.personal_info.mobile_number }}</dd>
+        <dt class="col-sm-3">University</dt>
+        <dd class="col-sm-9">{{ application.profile_snapshot.education.0.institution_name|default:"N/A" }}</dd>
+        <dt class="col-sm-3">Field of Study</dt>
+        <dd class="col-sm-9">{{ application.profile_snapshot.education.0.qualification_type|default:"N/A" }}</dd>
+        <dt class="col-sm-3">CGPA</dt>
+        <dd class="col-sm-9">{{ application.profile_snapshot.education.0.grade|default:"N/A" }}</dd>
+        <dt class="col-sm-3">Graduation Year</dt>
+        <dd class="col-sm-9">{{ application.profile_snapshot.education.0.end_date|date:"Y"|default:"N/A" }}</dd>
+      </dl>
+    </div>
+  </div>
+
+  <!-- ================= UPLOADED DOCUMENTS ================= -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-header">
+      <strong>Uploaded Documents</strong>
+    </div>
+    <div class="card-body">
+      {% for doc in application.profile_snapshot.documents %}
+      <p><strong>{{ doc.document_type|title }}:</strong> <a href="{{ doc.file_url }}" target="_blank">View Document</a></p>
+      {% empty %}
+      <p>No documents uploaded.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ================= PROFILE SNAPSHOT ================= -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-header">
+      <strong>Profile Snapshot (at time of application)</strong>
+    </div>
+    <div class="card-body">
+      <pre>{{ application.profile_snapshot|safe }}</pre>
+    </div>
+  </div>
+
+  <!-- ================= HR ACTIONS ================= -->
+  <div class="card shadow-sm">
+    <div class="card-header">
+      <strong>HR Actions</strong>
+    </div>
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-group mb-3">
+          <label for="action">Update Status</label>
+          <select name="action" class="form-control" id="action">
+            <option value="eligible" {% if application.status == 'eligible' %}selected{% endif %}>Mark as Eligible</option>
+            <option value="shortlisted" {% if application.status == 'shortlisted' %}selected{% endif %} {% if not can_shortlist %}disabled title="Shortlisting is allowed only after the vacancy deadline has passed and before shortlist finalization."{% endif %}>Shortlist for Next Stage</option>
+            <option value="rejected" {% if application.status == 'rejected' %}selected{% endif %}>Mark as Rejected</option>
+            <option value="interview" {% if application.status == 'interview' %}selected{% endif %}>Interview</option>
+            <option value="final_selection" {% if application.status == 'final_selection' %}selected{% endif %}>Final Selection</option>
+          </select>
+        </div>
+        <div class="form-group mb-3">
+          <label for="ranking_score">Ranking Score (Optional)</label>
+          <input type="number" step="0.01" name="ranking_score" class="form-control" id="ranking_score" value="{{ application.ranking_score }}">
+        </div>
+        <div class="form-group mb-3">
+          <label for="hr_notes">Internal Notes</label>
+          <textarea name="hr_notes" class="form-control" id="hr_notes" rows="3">{{ application.hr_notes }}</textarea>
+        </div>
+       
+        <a href="{% url 'hr_officer:vacancy_applications' application.position.vacancy.id %}" class="btn btn-secondary">Back to Applications</a>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

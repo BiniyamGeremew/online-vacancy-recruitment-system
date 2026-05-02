@@ -1,103 +1,142 @@
 {% extends "base.html" %}
 
-{% block title %}Request Review{% endblock %}
+{% block title %}Request Detail{% endblock %}
 
 {% block content %}
 
-<div class="container-fluid mt-4">
+<div class="container-fluid">
 
-  <div class="d-flex justify-content-end mb-3">
-    <a href="{% url 'college_dean:pending_requests' %}" class="btn btn-secondary btn-sm">
-      Back to Pending Requests
-    </a>
-  </div>
-
-  <!-- REQUEST HEADER -->
-  <div class="card mb-4">
-    <div class="card-header">
-      <h4 class="mb-0">{{ request_obj.subject }}</h4>
-    </div>
-    <div class="card-body">
-      <p class="mb-2"><strong>Department:</strong> {{ request_obj.department.name }}</p>
-      <p class="mb-0">{{ request_obj.request_narrative }}</p>
-    </div>
-  </div>
-
-  <!-- POSITION NARRATIVE -->
-  <div class="card mb-4">
-    <div class="card-header">
-      <h5 class="mb-0">Position Requirements</h5>
-    </div>
-
+  <div class="card shadow-sm mb-4">
     <div class="card-body">
 
-      {% for item in request_obj.items.all %}
+      <h3 class="mb-3">
+        {{ request_obj.subject }}
+      </h3>
+
+      <p class="mb-1">
+        <strong>Department:</strong> {{ request_obj.department.name }}
+      </p>
+
+      <p class="mb-3">
+        <strong>Status:</strong> {{ request_obj.status }}
+      </p>
+
+      <hr>
+
+      <h5 class="mb-3">Request Narrative</h5>
+
+      <div class="p-3 bg-light rounded">
+        {{ request_obj.request_narrative|linebreaks }}
+      </div>
+
+    </div>
+  </div>
+
+  {% if request_obj.items.all %}
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+
+      <h5 class="mb-3">Position Details</h5>
+
+      {% for it in request_obj.items.all %}
       <div class="border rounded p-3 mb-3">
 
-        <h6 class="mb-3">Position {{ forloop.counter }}</h6>
+        <div class="row">
 
-        <p class="mb-1">
-          <strong>Qualification:</strong> {{ item.academic_qualification }}
-        </p>
+          <div class="col-md-4">
+            <strong>Academic Qualification</strong><br>
+            {{ it.academic_qualification }}
+          </div>
 
-        <p class="mb-1">
-          <strong>Rank:</strong> {{ item.academic_rank }}
-        </p>
+          <div class="col-md-4">
+            <strong>Academic Rank</strong><br>
+            {{ it.academic_rank }}
+          </div>
 
-        <p class="mb-1">
-          <strong>Field of Study:</strong> {{ item.study_department }}
-        </p>
+          <div class="col-md-4">
+            <strong>Field of Study</strong><br>
+            {{ it.study_department }}
+          </div>
 
-        <p class="mb-1">
-          <strong>Experience:</strong> {{ item.experience_years }} years
-        </p>
+        </div>
 
-        <p class="mb-1">
-          <strong>CGPA Requirement:</strong> {{ item.cgpa_requirement }}
-        </p>
+        <div class="row mt-3">
 
-        <p class="mb-0">
-          <strong>Number of Positions:</strong> {{ item.number_of_employees }}
-        </p>
+          <div class="col-md-4">
+            <strong>Experience</strong><br>
+            {{ it.experience_years }} years
+          </div>
+
+          <div class="col-md-4">
+            <strong>Minimum CGPA</strong><br>
+            {{ it.cgpa_requirement }}
+          </div>
+
+          <div class="col-md-4">
+            <strong>Number of Positions</strong><br>
+            {{ it.number_of_employees }}
+          </div>
+
+        </div>
 
       </div>
-      {% empty %}
-        <p class="text-center mb-0">No positions found</p>
       {% endfor %}
 
     </div>
   </div>
 
+  {% endif %}
+
   <!-- ACTIONS -->
-  <div class="card p-3 mb-4">
-    <div class="row">
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="mb-3">Actions</h5>
 
-      <!-- REJECT -->
-      <div class="col-md-6">
-        <form method="post" action="{% url 'college_dean:reject_request' request_obj.pk %}">
-          {% csrf_token %}
-          <label class="form-label">Reject Reason</label>
-          <div class="mb-2">
-            {{ reject_form.reason }}
-          </div>
-          <button class="btn btn-danger">Reject</button>
-        </form>
+      {% if request_obj.status == STATUS_SUBMITTED %}
+      <div class="row">
+
+        <!-- REJECT -->
+        <div class="col-md-6">
+          <form method="post" action="{% url 'college_dean:reject_request' request_obj.pk %}">
+            {% csrf_token %}
+            <label class="form-label">Reject Reason</label>
+            <div class="mb-2">
+              {{ reject_form.reason }}
+            </div>
+            <button class="btn btn-danger">Reject</button>
+          </form>
+        </div>
+
+        <!-- FORWARD -->
+        <div class="col-md-6">
+          <form method="post" action="{% url 'college_dean:forward_request' request_obj.pk %}">
+            {% csrf_token %}
+            <label class="form-label">Forward Comment</label>
+            <div class="mb-2">
+              {{ forward_form.reason }}
+            </div>
+            <button class="btn btn-warning">Forward to VP</button>
+          </form>
+        </div>
+
       </div>
-
-      <!-- FORWARD -->
-      <div class="col-md-6">
-        <form method="post" action="{% url 'college_dean:forward_request' request_obj.pk %}">
-          {% csrf_token %}
-          <label class="form-label">Forward Comment</label>
-          <div class="mb-2">
-            {{ forward_form.reason }}
-          </div>
-          <button class="btn btn-warning">Forward to VP</button>
-        </form>
+      {% else %}
+      <div class="alert alert-info">
+        This request has already been processed.
+        {% if request_obj.status == STATUS_REJECTED_BY_DEAN %}
+          <strong>Status: Rejected by Dean</strong>
+        {% elif request_obj.status == STATUS_FORWARDED_TO_VP %}
+          <strong>Status: Forwarded to VP</strong>
+        {% endif %}
       </div>
-
+      {% endif %}
     </div>
   </div>
+
+  <a href="{% url 'college_dean:pending_requests' %}" class="btn btn-secondary">
+    Back to Pending Requests
+  </a>
 
 </div>
 

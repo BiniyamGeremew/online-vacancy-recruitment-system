@@ -1,7 +1,8 @@
 from django import forms
 from django.forms import inlineformset_factory
+from django.contrib.auth.models import User
 
-from .models import Vacancy, VacancyPosition, JobApplication
+from .models import Vacancy, VacancyPosition, JobApplication, HRProfile
 
 
 class VacancyForm(forms.ModelForm):
@@ -13,7 +14,6 @@ class VacancyForm(forms.ModelForm):
             "experience_requirement",
             "required_skills",
             "salary_info",
-            "announcement_date",
             "deadline",
             "application_instructions",
             "announcement_text",
@@ -35,11 +35,6 @@ class VacancyForm(forms.ModelForm):
             }),
 
             "salary_info": forms.TextInput(attrs={
-                "class": "form-control"
-            }),
-
-            "announcement_date": forms.DateInput(attrs={
-                "type": "date",
                 "class": "form-control"
             }),
 
@@ -112,3 +107,25 @@ class JobApplicationForm(forms.ModelForm):
     class Meta:
         model = JobApplication
         fields = []  # auto-filled from system
+
+
+class HROfficerUserForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'email')
+        widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+        }
+
+
+class HRProfileForm(forms.ModelForm):
+    class Meta:
+        model = HRProfile
+        fields = ('phone_number', 'office_location', 'bio')
+        widgets = {
+            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'office_location': forms.TextInput(attrs={'class': 'form-control'}),
+            'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+        }

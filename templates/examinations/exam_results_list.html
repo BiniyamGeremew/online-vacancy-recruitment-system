@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Exam Results - {{ vacancy.employee_request.subject }}{% endblock %}
+
+{% block content %}
+<div class="card card-secondary">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <div>
+      <h3 class="card-title">Exam Results for {{ vacancy.employee_request.subject }}</h3>
+      {% if exam %}
+        <small>Exam: {{ exam.title }} | Published: {{ exam.is_published|yesno:'Yes,No' }} | Finalized: {{ exam.finalized|yesno:'Yes,No' }}</small>
+      {% else %}
+        <small>No exam found for this vacancy.</small>
+      {% endif %}
+    </div>
+    {% if view_mode == 'department_head' and exam %}
+      <form method="post" class="mb-0">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="send_results">
+        <button type="submit" class="btn btn-primary" {% if exam.finalized or not exam.sessions.exists %}disabled{% endif %}>
+          Send Results to HR Officer
+        </button>
+      </form>
+    {% endif %}
+  </div>
+  <div class="card-body table-responsive p-0">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Applicant</th>
+          <th>Score</th>
+          <th>Percentage</th>
+          <th>Result</th>
+          <th>Status</th>
+          <th>Submitted</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if page_obj.object_list %}
+          {% for session in page_obj.object_list %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td>{{ session.applicant.get_full_name }}</td>
+              <td>{{ session.result.total_score if session.result else '-' }}/{{ session.exam.total_marks }}</td>
+              <td>{{ session.result.percentage if session.result else '-' }}%</td>
+              <td>{% if session.result %}{{ session.result.passed|yesno:'Passed,Failed' }}{% else %}Pending{% endif %}</td>
+              <td>{{ session.application.get_status_display }}</td>
+              <td>{{ session.end_time|date:'SHORT_DATETIME_FORMAT' if session.end_time else 'Not submitted' }}</td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="7">No exam sessions available.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer clearfix">
+    {% include 'components/pagination.html' %}
+  </div>
+</div>
+{% endblock %}

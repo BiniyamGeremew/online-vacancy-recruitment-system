@@ -47,7 +47,7 @@ Position Requirements:
 """
 
     prompt = f"""
-You are an academic HR assistant responsible for drafting formal internal recruitment requests for a university.
+You are an academic HR assistant responsible for drafting formal recruitment requests for a university.
 
 Transform the structured data into a clear and professional HR request document.
 

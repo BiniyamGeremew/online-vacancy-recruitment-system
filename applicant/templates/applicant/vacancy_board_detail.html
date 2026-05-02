@@ -35,6 +35,17 @@ Vacancy Announcement
 {{ vacancy.deadline|default:"To be announced" }}
 </p>
 
+<p>
+<strong>Status:</strong>
+{% if vacancy.status == "published" %}
+  <span class="badge bg-success">Published</span>
+{% elif vacancy.status == "closed" %}
+  <span class="badge bg-danger">Closed</span>
+{% else %}
+  <span class="badge bg-secondary">{{ vacancy.get_status_display }}</span>
+{% endif %}
+</p>
+
 <hr>
 
 <!-- AI Generated Vacancy -->
@@ -86,11 +97,15 @@ Vacancy Announcement
 </div>
 
 <div class="card-footer text-end">
-
-<a href="{% url 'applicant:apply' pos.id %}" class="btn btn-success btn-sm">
-Apply Now
-</a>
-
+{% if vacancy.status == "published" %}
+  <a href="{% url 'applications:apply' pos.id %}" class="btn btn-success btn-sm">
+    Apply Now
+  </a>
+{% elif vacancy.status == "closed" %}
+  <span style="display:inline-block; padding:8px 12px; background:#dc3545; color:#fff; border-radius:6px;">Closed</span>
+{% else %}
+  <span style="display:inline-block; padding:8px 12px; background:#6c757d; color:#fff; border-radius:6px;">Not Open</span>
+{% endif %}
 </div>
 
 </div>

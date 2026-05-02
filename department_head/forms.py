@@ -1,6 +1,8 @@
 from django import forms
 from django.forms import inlineformset_factory
+from django.contrib.auth.models import User
 from .models import EmployeeRequest, EmployeeRequestItem
+from accounts.models import UserProfile
 
 
 class EmployeeRequestForm(forms.ModelForm):
@@ -52,6 +54,24 @@ EmployeeRequestItemFormset = inlineformset_factory(
     can_delete=True,
 )
 
+class DepartmentHeadUserForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'email')
+        widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+        }
+
+
+class DepartmentHeadProfileForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = ('phone_number',)
+        widgets = {
+            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
+        }
 
 EmployeeRequestItemFormsetCreate = inlineformset_factory(
     EmployeeRequest,

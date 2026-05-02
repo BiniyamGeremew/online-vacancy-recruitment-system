@@ -111,10 +111,7 @@
 
 <p>
 <label>Announcement Date</label><br>
-<input type="date"
-       name="announcement_date"
-       value="{{ announcement_date|default:'' }}"
-       style="width:300px;padding:6px;">
+<span>Automatically set to today's date when the vacancy is published.</span>
 </p>
 
 <p>
@@ -122,7 +119,8 @@
 <input type="date"
        name="deadline"
        value="{{ deadline|default:'' }}"
-       style="width:300px;padding:6px;">
+       style="width:300px;padding:6px;"
+       required>
 </p>
 
 <p>

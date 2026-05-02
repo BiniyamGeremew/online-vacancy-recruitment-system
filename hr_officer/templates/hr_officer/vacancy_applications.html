@@ -1,43 +1,71 @@
 {% extends "base.html" %}
 {% block title %}Applications for {{ vacancy.employee_request.subject }}{% endblock %}
 {% block content %}
-<div class="card card-info">
-  <div class="card-header">
-    <h3 class="card-title">Applications for: {{ vacancy.employee_request.subject }}</h3>
+<div class="container-fluid" style="max-width:1200px;margin:auto;">
+
+  <!-- ================= HEADER ================= -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-header">
+      <h4>Applications for: {{ vacancy.employee_request.subject }}</h4>
+      <small class="text-muted">{{ vacancy.employee_request.department.name }}</small>
+    </div>
   </div>
-  <div class="card-body">
-    <table class="table table-bordered table-hover">
-      <thead>
-        <tr>
-          <th>Applicant Name</th>
-          <th>Education</th>
-          <th>Experience</th>
-          <th>Applied Date</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for app in applications %}
-        <tr>
-          <td>{{ app.applicant.get_full_name|default:app.applicant.username }}</td>
-          <td>
-            {% for edu in app.applicant_profile.qualifications.all %}
-              {{ edu.qualification_type }} ({{ edu.institution_name }})<br>
-            {% empty %}N/A{% endfor %}
-          </td>
-          <td>
-            {% for emp in app.applicant_profile.employments.all %}
-              {{ emp.job_title }} ({{ emp.employer }})<br>
-            {% empty %}N/A{% endfor %}
-          </td>
-          <td>{{ app.applied_at|date:"Y-m-d H:i" }}</td>
-          <td>{{ app.get_status_display }}</td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="5" class="text-center">No applications found.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+
+  <!-- ================= APPLICATIONS TABLE ================= -->
+  <div class="card shadow-sm">
+    <div class="card-body">
+      {% if page_obj %}
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Applicant Name</th>
+            <th>Email</th>
+            <th>University</th>
+            <th>CGPA</th>
+            <th>Field of Study</th>
+            <th>Status</th>
+            <th>Date Applied</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for app in page_obj %}
+          <tr>
+            <td>{{ app.applicant.user.get_full_name }}</td>
+            <td>{{ app.applicant.user.email }}</td>
+            <td>{{ app.profile_snapshot.education.0.institution_name|default:"N/A" }}</td>
+            <td>{{ app.profile_snapshot.education.0.grade|default:"N/A" }}</td>
+            <td>{{ app.profile_snapshot.education.0.qualification_type|default:"N/A" }}</td>
+            <td>
+              <span class="badge 
+                {% if app.status == 'submitted' %}badge-primary
+                {% elif app.status == 'eligible' %}badge-info
+                {% elif app.status == 'shortlisted' %}badge-success
+                {% elif app.status == 'rejected' %}badge-danger
+                {% elif app.status == 'interview' %}badge-warning
+                {% elif app.status == 'final_selection' %}badge-success
+                {% endif %}">
+                {{ app.get_status_display }}
+              </span>
+            </td>
+            <td>{{ app.submitted_at|date:"M d, Y" }}</td>
+            <td>
+              <a href="{% url 'hr_officer:application_detail' app.id %}" class="btn btn-sm btn-outline-primary">
+                View Full Application
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      {% include 'components/pagination.html' %}
+
+      {% else %}
+      <p class="text-center text-muted">No applications submitted yet.</p>
+      {% endif %}
+    </div>
   </div>
+
 </div>
 {% endblock %}

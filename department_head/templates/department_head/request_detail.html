@@ -21,6 +21,19 @@
         <strong>Status:</strong> {{ request_obj.status }}
       </p>
 
+      {% if request_obj.vacancy %}
+        {% with vacancy=request_obj.vacancy %}
+          <p class="mb-1">
+            <strong>Vacancy Status:</strong>
+            {% if vacancy.shortlist_finalized %}
+              <span class="badge badge-success">Shortlist Finalized</span>
+            {% else %}
+              <span class="badge badge-warning">In Progress</span>
+            {% endif %}
+          </p>
+        {% endwith %}
+      {% endif %}
+
       <hr>
 
       <h5 class="mb-3">Request Narrative</h5>
@@ -86,6 +99,69 @@
     </div>
   </div>
 
+  {% endif %}
+
+  {% if request_obj.vacancy %}
+    {% with vacancy=request_obj.vacancy %}
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+          <h5 class="mb-3">Vacancy Details</h5>
+
+          <p class="mb-1">
+            <strong>Announcement Date:</strong> {{ vacancy.announcement_date|date:"M d, Y" }}
+          </p>
+
+          <p class="mb-1">
+            <strong>Deadline:</strong> {{ vacancy.deadline|date:"M d, Y" }}
+          </p>
+
+          <p class="mb-1">
+            <strong>Shortlist Finalized:</strong> {{ vacancy.shortlist_finalized|yesno:"Yes,No" }}
+          </p>
+
+          {% if vacancy.shortlist_finalized and vacancy.status == 'published' %}
+            <div class="mt-3">
+              <a href="{% url 'department_head:create_exam' vacancy_id=vacancy.id %}" class="btn btn-primary">
+                Prepare Exam
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endwith %}
+  {% endif %}
+
+  {% if shortlisted_candidates %}
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h5 class="mb-3">Shortlisted Candidates Available</h5>
+
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Position</th>
+                <th>Ranking Score</th>
+                <th>Applied Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for application in shortlisted_candidates %}
+                <tr>
+                  <td>{{ application.applicant.user.get_full_name }}</td>
+                  <td>{{ application.applicant.user.email }}</td>
+                  <td>{{ application.position.academic_rank }}</td>
+                  <td>{{ application.ranking_score|floatformat:2 }}</td>
+                  <td>{{ application.submitted_at|date:"M d, Y" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   {% endif %}
 
   <a href="{% url 'department_head:my_requests' %}" class="btn btn-secondary">

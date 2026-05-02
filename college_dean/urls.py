@@ -12,5 +12,7 @@ urlpatterns = [
     path('sent/', views.SentRequestsView.as_view(), name='sent_requests'),
     path('notifications/', views.notifications, name='notifications'),
     path('profile/', views.profile, name='profile'),
+    path('profile/edit/', views.CollegeDeanProfileUpdateView.as_view(), name='edit_profile'),
+    path('profile/change-password/', views.CollegeDeanPasswordChangeView.as_view(), name='change_password'),
     path('rejected/', views.RejectedRequestsView.as_view(), name='rejected_requests'),
 ]

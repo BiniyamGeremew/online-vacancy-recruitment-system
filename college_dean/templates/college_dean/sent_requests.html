@@ -7,24 +7,25 @@
 <div class="container-fluid">
 
   <!-- Header -->
-  <div class="mb-3">
-    <h3 class="fw-bold">My Sent Requests (to VP)</h3>
-    <p class="text-muted">History of requests forwarded by you</p>
+  <div style="margin-bottom:15px;">
+    <h4 style="font-weight:700;">
+      History of requests forwarded by you to academic VP
+    </h4>
   </div>
 
   <!-- Card -->
-  <div class="card shadow-sm border-0">
+  <div class="card shadow-sm" style="border-radius:10px;">
     <div class="card-body">
 
       <div class="table-responsive">
         <table class="table table-hover align-middle">
 
-          <thead class="table-light">
+          <thead style="background:#f4f6f9;">
             <tr>
               <th>Date</th>
               <th>Subject</th>
               <th>Department</th>
-              <th>Status</th>
+              <th>Action</th>
             </tr>
           </thead>
 
@@ -37,7 +38,7 @@
               <tr>
                 <td>{{ act.performed_at|date:"Y-m-d H:i" }}</td>
 
-                <td class="fw-semibold">
+                <td style="font-weight:600;">
                   {{ act.request.subject }}
                 </td>
 
@@ -46,9 +47,11 @@
                 </td>
 
                 <td>
-                  <span class="badge bg-primary">
-                    Forwarded to VP
-                  </span>
+                  <a href="{% url 'college_dean:request_detail' act.request.id %}"
+                     class="btn btn-sm btn-primary"
+                     style="padding:4px 10px;">
+                    View
+                  </a>
                 </td>
               </tr>
 
@@ -56,7 +59,7 @@
 
             {% empty %}
               <tr>
-                <td colspan="4" class="text-center text-muted">
+                <td colspan="4" style="text-align:center; color:#6c757d;">
                   No forwarded requests.
                 </td>
               </tr>
@@ -66,6 +69,8 @@
 
         </table>
       </div>
+
+      {% include 'components/pagination.html' %}
 
     </div>
   </div>

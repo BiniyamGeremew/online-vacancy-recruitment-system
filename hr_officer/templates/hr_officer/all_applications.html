@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}All Applications{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid" style="max-width:1200px;margin:auto;">
+
+  <!-- ================= HEADER ================= -->
+  <div class="card shadow-sm mb-3">
+    <div class="card-header">
+      <h4>All Applications</h4>
+    </div>
+  </div>
+
+  <!-- ================= APPLICATIONS TABLE ================= -->
+  <div class="card shadow-sm">
+    <div class="card-body">
+      {% if page_obj %}
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Applicant Name</th>
+            <th>Email</th>
+            <th>Vacancy</th>
+            <th>Position</th>
+            <th>Status</th>
+            <th>Score</th>
+            <th>Date Applied</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for app in page_obj %}
+          <tr>
+            <td>{{ app.applicant.user.get_full_name }}</td>
+            <td>{{ app.applicant.user.email }}</td>
+            <td>{{ app.position.vacancy.employee_request.subject }}</td>
+            <td>{{ app.position.academic_rank }}</td>
+            <td>
+              <span class="badge 
+                {% if app.status == 'submitted' %}badge-primary
+                {% elif app.status == 'eligible' %}badge-info
+                {% elif app.status == 'shortlisted' %}badge-success
+                {% elif app.status == 'rejected' %}badge-danger
+                {% elif app.status == 'interview' %}badge-warning
+                {% elif app.status == 'final_selection' %}badge-success
+                {% endif %}">
+                {{ app.get_status_display }}
+              </span>
+            </td>
+            <td>{{ app.ranking_score|default_if_none:"0.00" }}</td>
+            <td>{{ app.submitted_at|date:"M d, Y" }}</td>
+            <td>
+              <a href="{% url 'hr_officer:application_detail' app.id %}" class="btn btn-sm btn-outline-primary">
+                View
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      {% include 'components/pagination.html' %}
+
+      {% else %}
+      <p class="text-center text-muted">No applications found.</p>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
