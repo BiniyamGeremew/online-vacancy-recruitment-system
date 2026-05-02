@@ -290,6 +290,32 @@ def edit_profile(request):
     })
 
 
+@login_required
+def exam_dashboard(request):
+    from examinations.models import ExamSession
+
+    # Show only published exam sessions assigned to this applicant.
+    sessions = ExamSession.objects.filter(
+        applicant=request.user,
+        exam__is_published=True
+    ).select_related('exam', 'application')
+
+    # Display active exams first, then upcoming exams, then finished exams.
+    def sort_key(session):
+        status = session.current_status
+        if status == ExamSession.STATUS_ACTIVE:
+            return 0
+        if status == ExamSession.STATUS_NOT_STARTED:
+            return 1
+        return 2
+
+    sessions = sorted(sessions, key=sort_key)
+
+    return render(request, 'applicant/exam_dashboard.html', {
+        'sessions': sessions,
+    })
+
+
 class ApplicantPasswordChangeView(LoginRequiredMixin, auth_views.PasswordChangeView):
     template_name = 'applicant/change_password.html'
     success_url = reverse_lazy('applicant:dashboard')

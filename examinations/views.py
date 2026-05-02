@@ -16,7 +16,7 @@ from django.views.decorators.http import require_POST
 from hr_officer.models import Vacancy
 from applications.models import Application
 from .models import Exam, Question, Choice, ExamSession, Answer, ExamResult, ExamSessionActivity
-from .forms import ExamCreateForm, ManualQuestionForm, QuestionUploadForm
+from .forms import ExamCreateForm
 from .services import generate_exam_questions
 from notifications.services import (
     send_exam_scheduled_notification,
@@ -79,6 +79,81 @@ def build_question_payload_from_upload(file_data):
     return payload
 
 
+def build_question_payload_from_questions(questions):
+    payload = []
+    for question in questions:
+        item = {
+            'question_text': question.question_text,
+            'question_type': question.question_type,
+            'marks': question.marks,
+            'choices': [choice.option_text for choice in question.choices.order_by('id')],
+            'correct_answer': None,
+        }
+
+        correct_choice = question.choices.filter(is_correct=True).first()
+        if correct_choice:
+            item['correct_answer'] = correct_choice.option_text
+        payload.append(item)
+    return payload
+
+
+def parse_review_questions_from_request(request):
+    question_keys = request.POST.getlist('question_key')
+    questions_data = []
+
+    for key in question_keys:
+        try:
+            idx = int(key)
+        except (TypeError, ValueError):
+            continue
+
+        question_text = request.POST.get(f'question_text_{idx}', '').strip()
+        if not question_text:
+            continue
+
+        try:
+            marks = int(request.POST.get(f'marks_{idx}', 1))
+        except (TypeError, ValueError):
+            marks = 1
+
+        question_type = request.POST.get(f'question_type_{idx}', Question.TYPE_MCQ)
+        question_type = question_type if question_type in [Question.TYPE_MCQ, Question.TYPE_SHORT_ANSWER] else Question.TYPE_MCQ
+
+        question_data = {
+            'question_text': question_text,
+            'question_type': question_type,
+            'marks': marks,
+        }
+
+        if question_type == Question.TYPE_MCQ:
+            choices = []
+            for choice_index in range(4):
+                choice_text = request.POST.get(f'choice_{idx}_{choice_index}', '').strip()
+                if choice_text:
+                    choices.append(choice_text)
+
+            correct_choice_index = request.POST.get(f'correct_{idx}')
+            correct_answer = None
+            if correct_choice_index and correct_choice_index.isdigit():
+                choice_index = int(correct_choice_index)
+                if 0 <= choice_index < len(choices):
+                    correct_answer = choices[choice_index]
+
+            if choices:
+                if not correct_answer and choices:
+                    correct_answer = choices[0]
+                question_data.update({
+                    'choices': choices,
+                    'correct_answer': correct_answer,
+                })
+            else:
+                question_data['question_type'] = Question.TYPE_SHORT_ANSWER
+
+        questions_data.append(question_data)
+
+    return questions_data
+
+
 def log_exam_activity(session: ExamSession, activity_type: str, details: dict = None):
     details = details or {}
     ExamSessionActivity.objects.create(
@@ -136,8 +211,9 @@ def assign_exam_to_shortlisted_applicants(exam: Exam) -> int:
 
     assigned_count = 0
     for application in applications:
-        application.status = Application.STATUS_EXAM
-        application.save()
+        if application.status != Application.STATUS_EXAM:
+            application.status = Application.STATUS_EXAM
+            application.save(update_fields=['status'])
 
         session, created = ExamSession.objects.get_or_create(
             exam=exam,
@@ -147,10 +223,10 @@ def assign_exam_to_shortlisted_applicants(exam: Exam) -> int:
                 'ip_address': '',
             }
         )
-        if created:
-            assigned_count += 1
+        assigned_count += 1
 
-        send_exam_scheduled_notification(application, exam)
+        if created:
+            send_exam_scheduled_notification(application, exam)
 
     return assigned_count
 
@@ -218,8 +294,20 @@ def create_exam(request, vacancy_id):
         return HttpResponseForbidden()
 
     exam = Exam.objects.filter(vacancy=vacancy).first()
-    exam_form = ExamCreateForm(request.POST or None, instance=exam)
-    manual_form = ManualQuestionForm(request.POST or None)
+    session_ai_settings = request.session.get('exam_ai_settings', {})
+    if request.method == 'POST':
+        exam_form = ExamCreateForm(request.POST, instance=exam)
+    else:
+        exam_form = ExamCreateForm(initial=session_ai_settings, instance=exam)
+
+    def _save_ai_settings_to_session():
+        request.session['exam_ai_settings'] = {
+            'question_count': request.POST.get('question_count', '10'),
+            'mcq_count': request.POST.get('mcq_count', '10'),
+            'short_answer_count': request.POST.get('short_answer_count', '0'),
+            'difficulty_level': request.POST.get('difficulty_level', 'medium'),
+        }
+        request.session.modified = True
 
     deadline_passed = vacancy.deadline and vacancy.deadline <= timezone.now().date()
     can_prepare_exam = bool(deadline_passed and vacancy.shortlist_finalized)
@@ -227,16 +315,20 @@ def create_exam(request, vacancy_id):
     if request.method == 'POST' and can_prepare_exam:
         action = request.POST.get('action')
 
-        if action == 'save_exam' and exam_form.is_valid():
-            exam = exam_form.save(commit=False)
-            exam.vacancy = vacancy
-            exam.created_by = request.user
-            exam.is_published = False
-            exam.save()
-            messages.success(request, 'Exam settings saved.')
-            return redirect('department_head:create_exam', vacancy_id=vacancy.id)
+        if action == 'save_exam':
+            _save_ai_settings_to_session()
+            if exam_form.is_valid():
+                exam = exam_form.save(commit=False)
+                exam.vacancy = vacancy
+                exam.created_by = request.user
+                exam.is_published = False
+                exam.pass_mark = int(Decimal(exam.total_marks) * Decimal('0.5')) if exam.total_marks else 0
+                exam.save()
+                messages.success(request, 'Exam settings saved.')
+                return redirect('department_head:create_exam', vacancy_id=vacancy.id)
 
         elif action == 'generate_ai' and exam:
+            _save_ai_settings_to_session()
             from .services.ai_question_service import AIQuestionService
             service = AIQuestionService()
             try:
@@ -268,56 +360,39 @@ def create_exam(request, vacancy_id):
             service.store_questions_in_session(request, exam.id, questions_data)
             return redirect('department_head:ai_review', exam_id=exam.id)
 
-        elif action == 'add_question' and exam and manual_form.is_valid():
-            from .services.manual_question_service import ManualQuestionService
-            service = ManualQuestionService()
-            question_data = manual_form.cleaned_data
-            if question_data['question_type'] == Question.TYPE_MCQ:
-                question_data['choices'] = [
-                    question_data['choice_1'],
-                    question_data['choice_2'],
-                    question_data['choice_3'],
-                    question_data['choice_4'],
-                ]
-                question_data['correct_choice'] = question_data[f"choice_{question_data['correct_choice']}"]
-            service.add_question_to_exam(exam, question_data)
-            messages.success(request, 'Question added successfully.')
-            return redirect('department_head:create_exam', vacancy_id=vacancy.id)
-
         elif action == 'publish_exam' and exam:
-            from .services.manual_question_service import ManualQuestionService
-            service = ManualQuestionService()
-            if service.can_publish_exam(exam):
+            if exam.questions.filter(status=Question.STATUS_DRAFT).exists():
+                from .services.ai_question_service import AIQuestionService
+                service = AIQuestionService()
+
                 exam.is_published = True
-                exam.save()
-                # Publish questions
+                exam.published_at = timezone.now()
+                exam.save(update_fields=['is_published', 'published_at'])
+
                 exam.questions.filter(status=Question.STATUS_DRAFT).update(status=Question.STATUS_PUBLISHED)
+
                 assigned = assign_exam_to_shortlisted_applicants(exam)
+                service.clear_session_questions(request, exam.id)
+
                 messages.success(request, f'Exam published and assigned to {assigned} applicants.')
             else:
-                messages.error(request, 'Cannot publish exam without questions.')
+                messages.error(request, 'Cannot publish exam without draft questions.')
             return redirect('department_head:create_exam', vacancy_id=vacancy.id)
 
-    draft_questions = []
     draft_question_count = 0
-    published_question_count = 0
     has_draft_questions = False
+    draft_questions = []
     if exam:
-        from .services.manual_question_service import ManualQuestionService
-        service = ManualQuestionService()
-        draft_questions = service.get_draft_questions(exam)
+        draft_questions = list(exam.questions.filter(status=Question.STATUS_DRAFT).order_by('order'))
         draft_question_count = len(draft_questions)
-        published_question_count = exam.questions.filter(status=Question.STATUS_PUBLISHED).count()
         has_draft_questions = draft_question_count > 0
 
     return render(request, 'examinations/exam_create.html', {
         'vacancy': vacancy,
         'exam': exam,
         'exam_form': exam_form,
-        'manual_form': manual_form,
         'draft_questions': draft_questions,
         'draft_question_count': draft_question_count,
-        'published_question_count': published_question_count,
         'has_draft_questions': has_draft_questions,
         'can_prepare_exam': can_prepare_exam,
     })
@@ -332,6 +407,12 @@ def ai_review_questions(request, exam_id):
     from .services.ai_question_service import AIQuestionService
     service = AIQuestionService()
     questions_data = service.get_questions_from_session(request, exam.id)
+    edit_draft = request.GET.get('edit_draft') == '1'
+
+    if not questions_data and edit_draft:
+        draft_questions = exam.questions.filter(status=Question.STATUS_DRAFT).order_by('order')
+        if draft_questions.exists():
+            questions_data = build_question_payload_from_questions(draft_questions)
 
     if not questions_data:
         messages.error(request, 'No questions to review. Please generate questions first.')
@@ -341,6 +422,11 @@ def ai_review_questions(request, exam_id):
         action = request.POST.get('action')
 
         if action == 'save_draft':
+            questions_data = parse_review_questions_from_request(request)
+            if not questions_data:
+                messages.error(request, 'No valid questions were found in the review form. Please adjust and try again.')
+                return redirect('department_head:ai_review', exam_id=exam.id)
+
             service.save_questions_to_draft(exam, questions_data)
             service.clear_session_questions(request, exam.id)
             messages.success(request, f'Saved {len(questions_data)} questions as draft.')
@@ -434,6 +520,14 @@ def take_exam(request, session_id):
     if session.is_submitted:
         return redirect('applicant:exam_result', session_id=session.id)
 
+    now = timezone.now()
+    exam_has_start_time = exam.start_time is not None
+    exam_start_in_future = exam_has_start_time and now < exam.start_time
+    can_start_exam = not session.start_time and not exam_start_in_future
+    show_started = bool(session.start_time)
+    show_scheduled = exam_start_in_future and not session.start_time
+    scheduled_start_time = exam.start_time if exam_has_start_time else None
+
     if request.method == 'POST':
         action = request.POST.get('action')
         fingerprint = request.POST.get('device_fingerprint', '')
@@ -525,7 +619,6 @@ def take_exam(request, session_id):
 
             return redirect('applicant:exam_result', session_id=session.id)
 
-    show_started = bool(session.start_time)
     remaining_seconds = None
     questions = []
     if show_started:
@@ -545,6 +638,9 @@ def take_exam(request, session_id):
         'session': session,
         'exam': exam,
         'show_started': show_started,
+        'show_scheduled': show_scheduled,
+        'scheduled_start_time': scheduled_start_time,
+        'can_start_exam': can_start_exam,
         'remaining_seconds': remaining_seconds,
         'questions': questions,
     })

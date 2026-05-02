@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Exams{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>My Exams</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="{% url 'applicant:dashboard' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">My Exams</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            {% if sessions %}
+                <div class="row">
+                    {% for session in sessions %}
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h3 class="card-title">{{ session.exam.title }}</h3>
+
+                                {% if session.current_status == 'NOT_STARTED' %}
+                                    <span class="badge badge-warning">Not Started</span>
+                                {% elif session.current_status == 'ACTIVE' %}
+                                    <span class="badge badge-success">Active</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">Finished</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="card-body">
+                                <p><strong>Vacancy:</strong> {{ session.exam.vacancy.employee_request.subject }}</p>
+                                <p><strong>Duration:</strong> {{ session.exam.duration_minutes }} minutes</p>
+                                <p><strong>Total Marks:</strong> {{ session.exam.total_marks }}</p>
+                                <p><strong>Pass Mark:</strong> {{ session.exam.pass_mark }}</p>
+
+                                {% if session.exam.start_time %}
+                                    <p><strong>Scheduled Start:</strong> {{ session.exam.start_time|date:'M d, Y H:i' }}</p>
+                                    <p><strong>Scheduled End:</strong> {{ session.exam.scheduled_end_time|date:'M d, Y H:i' }}</p>
+                                {% else %}
+                                    <p><strong>Start Type:</strong> Available immediately</p>
+                                {% endif %}
+
+                                {% if session.current_status == 'NOT_STARTED' and session.exam.start_time %}
+                                    <div class="alert alert-warning mt-3">
+                                        <strong>Exam starts in:</strong>
+                                        <div class="exam-countdown"
+                                             data-start-time="{{ session.exam.start_time|date:'c' }}">
+                                            Calculating...
+                                        </div>
+                                    </div>
+                                {% elif session.current_status == 'ACTIVE' %}
+                                    <div class="alert alert-success mt-3">
+                                        <strong>Exam is now available!</strong>
+                                    </div>
+                                {% endif %}
+
+                                {% if session.is_submitted %}
+                                    <p><strong>Status:</strong> Submitted</p>
+                                    <p><strong>Started At:</strong> {{ session.started_at|date:'M d, Y H:i' }}</p>
+                                    {% if session.end_time %}
+                                        <p><strong>Ended At:</strong> {{ session.end_time|date:'M d, Y H:i' }}</p>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+
+                            <div class="card-footer">
+                                {% if session.current_status == 'ACTIVE' and not session.is_submitted %}
+                                    <a href="{% url 'applicant:take_exam' session.id %}" class="btn btn-primary">
+                                        Take Exam
+                                    </a>
+                                {% elif session.current_status == 'NOT_STARTED' %}
+                                    <button class="btn btn-secondary" disabled>
+                                        Exam Not Started Yet
+                                    </button>
+                                {% elif session.is_submitted %}
+                                    <a href="{% url 'applicant:exam_result' session.id %}" class="btn btn-info">
+                                        View Result
+                                    </a>
+                                {% else %}
+                                    <button class="btn btn-secondary" disabled>
+                                        Exam Finished
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <h5>No Exams Assigned</h5>
+                    <p>You don't have any published exams assigned yet. Check back later or contact HR.</p>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function initExamDashboardCountdowns() {
+    const countdowns = document.querySelectorAll('.exam-countdown');
+    if (!countdowns.length) return;
+
+    function updateAll() {
+        const now = new Date().getTime();
+
+        countdowns.forEach(element => {
+            const startTimeStr = element.dataset.startTime;
+
+            if (!startTimeStr) {
+                element.textContent = 'No schedule set';
+                return;
+            }
+
+            const startTime = new Date(startTimeStr).getTime();
+
+            if (isNaN(startTime)) {
+                element.textContent = 'Invalid start time';
+                return;
+            }
+
+            const diff = startTime - now;
+
+            if (diff <= 0) {
+                element.textContent = 'Starting soon';
+                return;
+            }
+
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            element.textContent =
+                String(hours).padStart(2, '0') + ':' +
+                String(minutes).padStart(2, '0') + ':' +
+                String(seconds).padStart(2, '0');
+        });
+    }
+
+    updateAll();
+    setInterval(updateAll, 1000);
+}
+
+window.addEventListener('DOMContentLoaded', initExamDashboardCountdowns);
+</script>
+{% endblock %}

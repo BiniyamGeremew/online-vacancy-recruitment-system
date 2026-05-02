@@ -10,7 +10,8 @@ from .views import (
     profile_step4,
     vacancy_board_detail,
     vacancy_board_list,
-    apply
+    apply,
+    exam_dashboard
 )
 from examinations.views import take_exam, exam_result
 
@@ -32,6 +33,7 @@ urlpatterns = [
     path('change-password/', ApplicantPasswordChangeView.as_view(), name='change_password'),
 
     path('apply/<int:position_id>/', apply, name='apply'),
+    path('exams/', exam_dashboard, name='exam_dashboard'),
     path('exam/<int:session_id>/', take_exam, name='take_exam'),
     path('exam/<int:session_id>/result/', exam_result, name='exam_result'),
 ]

@@ -19,15 +19,27 @@
     <p><strong>Duration:</strong> {{ exam.duration_minutes }} minutes</p>
     {% if show_started %}
       <div class="alert alert-info">
-        Time remaining: <span id="timer">{{ remaining_seconds }}</span> seconds
+        Time remaining: <span id="timer" data-remaining="{{ remaining_seconds|default:0 }}">00:00</span>
       </div>
     {% endif %}
 
-    {% if not show_started %}
+    {% if show_scheduled %}
+      <div class="alert alert-warning">
+        <p>Your exam is scheduled to start at <strong>{{ scheduled_start_time|date:'M d, Y H:i' }}</strong>.</p>
+        <p>It will become available on your dashboard when the scheduled time arrives.</p>
+      </div>
+      <div class="alert alert-info">
+        Starts in: <span class="exam-countdown" data-start-time="{{ scheduled_start_time|date:'c' }}">Calculating...</span>
+      </div>
+    {% elif not show_started %}
       <div class="alert alert-warning">
         <p>Your exam is ready. Click <strong>Start Exam</strong> to begin. Once started, your timer will begin and the exam will be monitored for security events.</p>
       </div>
-      <button id="start-button" class="btn btn-success">Start Exam</button>
+      {% if can_start_exam %}
+        <button id="start-button" class="btn btn-success">Start Exam</button>
+      {% else %}
+        <button class="btn btn-secondary" disabled>Waiting for exam start</button>
+      {% endif %}
     {% else %}
       <form method="post" id="exam-form">
         {% csrf_token %}
@@ -66,10 +78,17 @@
 
 {% block extra_js %}
 <script>
+  const sessionId = '{{ session.id }}';
   const securityUrl = "{% url 'examinations:exam_security_event' session_id=session.id %}";
   const startButton = document.getElementById('start-button');
   const deviceFingerprintInput = document.getElementById('device_fingerprint');
   const form = document.getElementById('exam-form');
+  const timerEl = document.getElementById('timer');
+  const warningEl = document.createElement('div');
+  warningEl.id = 'exam-security-warning';
+  warningEl.className = 'alert alert-danger d-none';
+  warningEl.style.marginBottom = '1rem';
+  document.querySelector('.card-body').insertBefore(warningEl, document.querySelector('.card-body').firstChild);
 
   function computeFingerprint() {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'unknown';
@@ -91,11 +110,12 @@
     return cookieValue;
   }
 
-  function sendSecurityEvent(eventType) {
+  function sendSecurityEvent(eventType, extraData = {}) {
     const fingerprint = computeFingerprint();
     const data = new URLSearchParams();
     data.append('event_type', eventType);
     data.append('device_fingerprint', fingerprint);
+    Object.keys(extraData).forEach(key => data.append(key, extraData[key]));
 
     return fetch(securityUrl, {
       method: 'POST',
@@ -104,7 +124,7 @@
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: data,
-    });
+    }).catch(() => null);
   }
 
   function sendReloadEvent() {
@@ -129,6 +149,12 @@
     }
   }
 
+  function showWarning(message) {
+    warningEl.textContent = message;
+    warningEl.classList.remove('d-none');
+    setTimeout(() => warningEl.classList.add('d-none'), 7000);
+  }
+
   function disableActions(event) {
     if (['contextmenu', 'copy', 'paste', 'cut', 'selectstart'].includes(event.type)) {
       event.preventDefault();
@@ -136,69 +162,177 @@
   }
 
   function disableKeyShortcuts(event) {
-    if (event.key === 'F12' || (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'i')) {
+    const key = event.key.toLowerCase();
+    if (event.key === 'F12' || (event.ctrlKey && event.shiftKey && ['i', 'j', 'c'].includes(key))) {
       event.preventDefault();
+      sendSecurityEvent('devtools');
+      showWarning('Developer tools are blocked during the exam.');
+    }
+    if ((event.ctrlKey || event.metaKey) && ['c', 'v', 'x'].includes(key)) {
+      event.preventDefault();
+    }
+  }
+
+  function renderTimer(seconds) {
+    const minutes = Math.max(0, Math.floor(seconds / 60));
+    const secs = Math.max(0, seconds % 60);
+    return String(minutes).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+  }
+
+  function autoSubmitExam() {
+    if (!form) return;
+    if (deviceFingerprintInput) {
+      deviceFingerprintInput.value = computeFingerprint();
+    }
+    form.submit();
+  }
+
+  function markExamPageUnsafe() {
+    const sidebar = document.querySelector('.main-sidebar');
+    if (sidebar) sidebar.style.display = 'none';
+    document.body.style.pointerEvents = 'none';
+    document.body.style.opacity = '0.95';
+    showWarning('This exam session is already active in another tab.');
+  }
+
+  function preventNavigation(event) {
+    const anchor = event.target.closest('a');
+    if (!anchor || !anchor.href) return;
+    if (anchor.href === window.location.href || anchor.getAttribute('href') === '#') return;
+    event.preventDefault();
+    showWarning('You cannot leave the exam page.');
+  }
+
+  const lockKey = `exam_session_lock_${sessionId}`;
+  const tabId = sessionStorage.getItem('exam_tab_id') || (typeof crypto !== 'undefined' ? crypto.randomUUID() : Math.random().toString(36).slice(2));
+  sessionStorage.setItem('exam_tab_id', tabId);
+
+  function acquireLock() {
+    const existingLock = localStorage.getItem(lockKey);
+    if (existingLock && existingLock !== tabId) {
+      return false;
+    }
+    localStorage.setItem(lockKey, tabId);
+    return true;
+  }
+
+  function releaseLock() {
+    if (localStorage.getItem(lockKey) === tabId) {
+      localStorage.removeItem(lockKey);
+    }
+  }
+
+  function checkDevTools() {
+    if (window.outerWidth - window.innerWidth > 160) {
+      sendSecurityEvent('devtools');
+      showWarning('Developer tools detected. The exam will be submitted.');
+      autoSubmitExam();
     }
   }
 
   if (startButton) {
     startButton.addEventListener('click', function () {
       sendSecurityEvent('start').then(response => {
-        if (response.ok) {
+        if (response && response.ok) {
           window.location.reload();
         } else {
           response.json().then(data => {
             alert(data.error || 'Unable to start exam.');
+          }).catch(() => {
+            alert('Unable to start exam.');
           });
         }
       });
     });
   }
 
+  if (form) {
+    form.addEventListener('submit', function () {
+      if (deviceFingerprintInput) {
+        deviceFingerprintInput.value = computeFingerprint();
+      }
+    });
+  }
+
+  if (timerEl) {
+    let remaining = parseInt(timerEl.dataset.remaining || '0', 10);
+    timerEl.textContent = renderTimer(remaining);
+    const interval = setInterval(() => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        clearInterval(interval);
+        timerEl.textContent = '00:00';
+        showWarning('Time is up. Your exam will be submitted automatically.');
+        autoSubmitExam();
+        return;
+      }
+      timerEl.textContent = renderTimer(remaining);
+    }, 1000);
+  }
+
+  function initScheduledCountdowns() {
+    const countdownEls = document.querySelectorAll('.exam-countdown');
+    if (!countdownEls.length) return;
+
+    function updateScheduled() {
+      const now = new Date().getTime();
+      countdownEls.forEach(el => {
+        const startTime = new Date(el.dataset.startTime).getTime();
+        if (isNaN(startTime)) {
+          el.textContent = 'Invalid start time';
+          return;
+        }
+        const delta = startTime - now;
+        if (delta <= 0) {
+          el.textContent = 'Starting soon';
+          return;
+        }
+        const hours = Math.floor(delta / (1000 * 60 * 60));
+        const minutes = Math.floor((delta % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((delta % (1000 * 60)) / 1000);
+        el.textContent = String(hours).padStart(2, '0') + ':' +
+                         String(minutes).padStart(2, '0') + ':' +
+                         String(seconds).padStart(2, '0');
+      });
+    }
+
+    updateScheduled();
+    setInterval(updateScheduled, 1000);
+  }
+
+  initScheduledCountdowns();
+
   document.addEventListener('visibilitychange', function () {
-    if (document.hidden) {
+    if (document.visibilityState === 'hidden') {
       sendSecurityEvent('tab_switch');
     }
   });
 
+  window.addEventListener('blur', function () {
+    sendSecurityEvent('tab_switch');
+  });
+
+  document.addEventListener('click', preventNavigation, true);
   ['contextmenu', 'copy', 'paste', 'cut', 'selectstart'].forEach(evt => {
     document.addEventListener(evt, disableActions);
   });
   document.addEventListener('keydown', disableKeyShortcuts);
 
-  if (form) {
-    form.addEventListener('submit', function () {
-      deviceFingerprintInput.value = computeFingerprint();
-    });
-  }
-
-  const timerEl = document.getElementById('timer');
-  if (timerEl) {
-    let remaining = parseInt(timerEl.textContent, 10);
-    const interval = setInterval(() => {
-      if (remaining > 0) {
-        remaining -= 1;
-        timerEl.textContent = remaining;
-      }
-      if (remaining <= 0) {
-        clearInterval(interval);
-        if (form) {
-          alert('Time is up. Your exam will be submitted automatically.');
-          if (deviceFingerprintInput) {
-            deviceFingerprintInput.value = computeFingerprint();
-          }
-          form.submit();
-        }
-      }
-    }, 1000);
-  }
-
   window.addEventListener('beforeunload', function (event) {
-    if (timerEl) {
-      sendReloadEvent();
-      event.preventDefault();
-      event.returnValue = '';
+    sendReloadEvent();
+    releaseLock();
+    event.preventDefault();
+    event.returnValue = '';
+  });
+  window.addEventListener('pagehide', function () {
+    releaseLock();
+  });
+  window.addEventListener('storage', function (event) {
+    if (event.key === lockKey && event.newValue && event.newValue !== tabId) {
+      markExamPageUnsafe();
     }
   });
+
+  setInterval(checkDevTools, 1000);
 </script>
 {% endblock %}

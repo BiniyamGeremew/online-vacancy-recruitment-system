@@ -14,17 +14,27 @@
       </div>
     </div>
     <div class="card-body">
-      <form method="post">
+      <form method="post" id="review-form">
         {% csrf_token %}
 
         <div class="mb-3">
           <p>Review and edit the AI-generated questions before saving them as draft.</p>
         </div>
+        <div id="review-error" class="alert alert-danger" style="display: none;"></div>
 
         {% for question in questions_data %}
-        <div class="card mb-3">
-          <div class="card-header">
-            <h5>Question {{ forloop.counter }}</h5>
+        <div class="card mb-3 question-card">
+          <input type="hidden" name="question_key" value="{{ forloop.counter0 }}">
+          <input type="hidden" name="question_type_{{ forloop.counter0 }}" value="{{ question.question_type }}">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+              <h5 class="question-number">Question {{ forloop.counter }}</h5>
+            </div>
+            <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="moveQuestion(this, -1)">Up</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="moveQuestion(this, 1)">Down</button>
+              <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteQuestion(this)">Delete</button>
+            </div>
           </div>
           <div class="card-body">
             <div class="form-group">
@@ -40,7 +50,7 @@
                 <div class="input-group-prepend">
                   <div class="input-group-text">
                     <input type="radio" name="correct_{{ forloop.parentloop.counter0 }}" value="{{ forloop.counter0 }}"
-                           {% if choice == question.correct_choice %}checked{% endif %}>
+                           {% if choice == question.correct_choice or choice == question.correct_answer %}checked{% endif %}>
                   </div>
                 </div>
                 <input type="text" name="choice_{{ forloop.parentloop.counter0 }}_{{ forloop.counter0 }}" class="form-control" value="{{ choice }}">
@@ -60,7 +70,7 @@
         {% endfor %}
 
         <div class="form-group">
-          <button type="submit" name="action" value="save_draft" class="btn btn-success">
+          <button type="submit" name="action" value="save_draft" class="btn btn-success" onclick="return confirmSaveDraft(this)">
             Save as Draft
           </button>
           <button type="submit" name="action" value="regenerate" class="btn btn-warning">
@@ -71,4 +81,65 @@
     </div>
   </div>
 </div>
+<script>
+function moveQuestion(button, direction) {
+  const card = button.closest('.question-card');
+  if (!card) return;
+  const target = direction === -1 ? card.previousElementSibling : card.nextElementSibling;
+  if (target && target.classList.contains('question-card')) {
+    if (direction === -1) {
+      card.parentNode.insertBefore(card, target);
+    } else {
+      card.parentNode.insertBefore(target, card);
+    }
+    refreshQuestionNumbers();
+  }
+}
+
+function deleteQuestion(button) {
+  const card = button.closest('.question-card');
+  if (card) {
+    card.remove();
+    refreshQuestionNumbers();
+  }
+}
+
+function refreshQuestionNumbers() {
+  const cards = document.querySelectorAll('.question-card');
+  cards.forEach((card, index) => {
+    const title = card.querySelector('.question-number');
+    if (title) {
+      title.textContent = `Question ${index + 1}`;
+    }
+  });
+}
+
+function confirmSaveDraft(button) {
+  const form = button.form;
+  const markFields = form.querySelectorAll('input[name^="marks_"]');
+  for (const field of markFields) {
+    if (!field.value || field.value.toString().trim() === '' || Number(field.value) <= 0) {
+      const errorEl = document.getElementById('review-error');
+      if (errorEl) {
+        errorEl.textContent = 'All questions must have marks before saving.';
+        errorEl.style.display = 'block';
+      }
+      alert('All questions must have marks before saving.');
+      return false;
+    }
+  }
+
+  const confirmed = window.confirm('Please ensure all questions have marks assigned. Continue?');
+  if (!confirmed) {
+    return false;
+  }
+
+  const errorEl = document.getElementById('review-error');
+  if (errorEl) {
+    errorEl.style.display = 'none';
+    errorEl.textContent = '';
+  }
+  return true;
+}
+</script>
 {% endblock %}
